@@ -16,16 +16,16 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 
 class Orders:
-    
+
     def __init__(self, symbol, open_reason=None, close_reason=None,
                  compound=False, able_to_exceed=True, min_to_enter=10):
         '''
         Initialising the placement of an order.
-        
+
         Currently, you must have a file called data.py in the directory for the
         variables to be stored in.
-        
-        The Orders class is useless if used without one of its methods. 
+
+        The Orders class is useless if used without one of its methods.
 
         Parameters
         ----------
@@ -34,7 +34,7 @@ class Orders:
         open_reason : str
             A label to put on the trade df for the reason the trade opened.
         close_reason : str
-            A label to put on the trade df for the reason the trade closed. 
+            A label to put on the trade df for the reason the trade closed.
         compound : bool, optional
             True if you want to compund invest. The default is False.
         able_to_exceed : bool, optional
@@ -55,7 +55,7 @@ class Orders:
             self.capital = data.starting_amount
         else:
             self.capital = data.wealth_track[-1]
-        
+
     def order_amount(self, amount, limit_price=None):
         '''
         Places an order for a desired amount of shares. Would not recommend as
@@ -82,10 +82,10 @@ class Orders:
             else:
                 data.order_placed = False
                 return
-            
+
         value_of_order = amount * self.price
         value_space = data.starting_amount - data.value_invested # This is used only if self.able_to_exceed == False
-            
+
         if amount > 0:
             type_of_order = 'long'
             if not self.able_to_exceed and value_of_order > value_space:
@@ -99,7 +99,7 @@ class Orders:
         if -10 <= amount <= 10:
             data.order_placed = False
             return
-        
+
         data.trade_df = data.trade_df.append({
             'long_or_short': type_of_order,
             'symbol': self.symbol,
@@ -110,15 +110,15 @@ class Orders:
             'open_reason': self.open_reason,
             'close_reason': self.close_reason},
         ignore_index=True) # Updating the trade dataframe for the new order
-        
+
         data.positions_tracker.at[data.current_date, self.symbol] = self.current_number_of_shares + amount # Adding the number of shares held of this position on this day
         data.current_positions.add(self.symbol) # NOTE: This will not work if you are using a non-target function to sell shares!
         data.cash -= abs(value_of_order) # Removing the value of the order from our cash. Notice it does not add anything in for short orders
         data.value_invested += abs(value_of_order) # Increasing the value of our total open positions
         data.order_placed = True
-        
+
         return
-    
+
     def order_value(self, value, limit_price=None):
         '''
         Places an order for a given value of shares. Would recommend using
@@ -152,7 +152,7 @@ class Orders:
         else:
             return
         return self.order_amount(amount) # Places an order for the calculated number of shares
-    
+
     def order_percent(self, percent, limit_price=None):
         '''
         Places an order for a given percent of your starting cash. If coumpund
@@ -182,7 +182,7 @@ class Orders:
         # Note below that self.capital will be the starting amount if self.compound == False
         value = percent * self.capital # Calclulating the value of the order based on the percent
         return self.order_value(value)
-    
+
     def order_target_amount(self, target_amount, limit_price=None):
         '''
         Will put an order in for a target amount of shares. If negative, will
@@ -198,23 +198,23 @@ class Orders:
         Returns
         -------
         None. The function will update data.cash and also update data.trade_df
-        
+
         Examples
         -------
         >>> Orders('SPY').order_target_amount(50)
-        
+
         This places an order such that you will own 50 shares of SPY at the
         close of today.
-        
-        
+
+
         >>> Orders('IEF').order_target_amount(0)
-        
+
         This will ensure that you will exit all positions of IEF at the close
         of the day
-        
-        
+
+
         >>> Orders('SPY', open_reason='Entry 1').order_target_amount(-100, limit_order=101.3)
-        
+
         This will ensure you are short 100 shares of SPY if the limit price of
         $101.3 is hit on that day.
         '''
@@ -243,7 +243,7 @@ class Orders:
                     amount_to_close -= row['amount']
                 elif abs(amount_to_close) < abs(row['amount']):
                     self._part_close_row(trade_number=index, amount_to_close=amount_to_close)
-                elif amount_to_close == 0:                
+                elif amount_to_close == 0:
                     break
         elif self.current_number_of_shares > 0 > target_amount or self.current_number_of_shares < 0 < target_amount:
             for index, row in self.all_open_trade_rows.iterrows():
@@ -252,7 +252,7 @@ class Orders:
         else:
             return
         return
-    
+
     def order_target_value(self, target_value, limit_price=None):
         '''
         Will put an order in for a target value of shares. If negative, will
@@ -272,21 +272,21 @@ class Orders:
         Examples
         -------
         >>> Orders('SPY').order_target_value(5000)
-        
+
         This places an order such that you will own as close to $5000 worth of
         SPY as possible at the close of today.
-        
+
         >>> Orders('IEF').order_target_value(0)
-        
+
         This will ensure that you will exit all positions of IEF at the close
         of the day
-        
+
         >>> Orders('SPY', open_reason='Entry 1').order_target_value(-10000, limit_order=101.3)
-        
+
         This will ensure you are short 100 shares of SPY if the limit price of
         $101.3 is hit on that day.
         '''
-        
+
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
@@ -299,7 +299,7 @@ class Orders:
         elif target_value < 0:
             target_amount = ceil(target_value/self.price)
         return self.order_target_amount(target_amount)
-    
+
     def order_target_percent(self, target_percent, limit_price=None):
         '''
         Will put an order in for a target percent of your portfolio. If
@@ -327,7 +327,7 @@ class Orders:
                 return
         target_value = (target_percent) * self.capital
         return self.order_target_value(target_value)
-    
+
     def _fully_close_row(self, trade_number):
         row_to_close = data.trade_df.loc[trade_number]
         if row_to_close['symbol'] != self.symbol:
@@ -344,10 +344,10 @@ class Orders:
         data.trade_df.at[trade_number, 'close_value'] = close_value
         data.trade_df.at[trade_number, 'close_reason'] = self.close_reason
         data.trade_df.at[trade_number, 'profit'] = profit
-    
+
         data.cash += profit + abs(row_to_close['open_value'])
         data.value_invested -= abs(row_to_close['open_value'])
-    
+
     def _part_close_row(self, trade_number, amount_to_close):
         row_to_close = data.trade_df.loc[trade_number]
         amount_remaining = row_to_close['amount'] - amount_to_close
@@ -373,11 +373,11 @@ class Orders:
         data.trade_df.at[trade_number, 'close_value'] = amount_to_close * self.price
         data.trade_df.at[trade_number, 'close_reason'] = self.close_reason
         data.trade_df.at[trade_number, 'profit'] = profit
-        
+
         data.cash += profit + abs(new_open_value)
         data.value_invested -= abs(new_open_value)
-        
-        
+
+
         data.trade_df = data.trade_df.append({
             'long_or_short': row_to_close['long_or_short'],
             'symbol': row_to_close['symbol'],
@@ -388,7 +388,7 @@ class Orders:
             'open_reason': row_to_close['open_reason']
             },
             ignore_index=True)
-    
+
     def check_stop_loss(self,
                         stop_loss_percent,
                         close_if_hit=True,
@@ -418,14 +418,14 @@ class Orders:
                     stop_value = (1 - stop_loss_percent) * entry_value
                 else:
                     stop_value = (1 + stop_loss_percent) * entry_value
-                
+
                 if eod_value < stop_value:
                     if close_if_hit:
                         self.fully_close_row(trade_number)
                     return True
                 else:
                     return False
-                
+
         else:
             todays_low = data.daily_lows[self.symbol].loc[data.current_date]
             todays_high = data.daily_highs[self.symbol].loc[data.current_date]
@@ -438,7 +438,7 @@ class Orders:
                 else:
                     min_value_today = self.current_number_of_shares * todays_high
                     stop_value = (1 + stop_loss_percent) * entry_value
-                
+
                 if min_value_today < stop_value: # Same for long or short
                     # print('Exit all')
                     stop_price = stop_value / self.current_number_of_shares
@@ -451,7 +451,7 @@ class Orders:
                     return True
                 else:
                     return False
-                
+
             else:
                 trade_row = data.trade_df.loc[trade_number]
                 entry_value = trade_row['open_value']
@@ -463,7 +463,7 @@ class Orders:
                 else:
                     min_value_today = number_of_shares * todays_high
                     stop_value = (1 + stop_loss_percent) * entry_value
-                
+
                 if min_value_today < stop_value:
                     stop_price = stop_value / number_of_shares
                     if todays_low < stop_price < todays_high:
@@ -475,9 +475,9 @@ class Orders:
                     return True
                 else:
                     return False
-            
-            
-                
+
+
+
 
 def get_norgatedata(symbol_list,
                     start_date=date(2000,1,1),
@@ -576,56 +576,56 @@ def get_norgatedata(symbol_list,
             daily_unadjustedcloses[symbol] = pricedata_dataframe['Unadjusted Close']
         pbar.update(1)
     pbar.close()
-    
+
     if need_close:
         daily_closes = daily_closes.dropna(how='all')
-        daily_closes = daily_closes.fillna(method='ffill') + (daily_closes.fillna(method='bfill') * 0) 
+        daily_closes = daily_closes.fillna(method='ffill') + (daily_closes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_closes = daily_closes.dropna(how='any')
         data.daily_closes = daily_closes
-    
+
     if need_open:
         daily_opens = daily_opens.dropna(how='all')
         daily_opens = daily_opens.fillna(method='ffill') + (daily_opens.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_opens = daily_opens.dropna(how='any')
         data.daily_opens = daily_opens
-    
+
     if need_high:
         daily_highs = daily_highs.dropna(how='all')
         daily_highs = daily_highs.fillna(method='ffill') + (daily_highs.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_highs = daily_highs.dropna(how='any')
         data.daily_highs = daily_highs
-    
+
     if need_low:
         daily_lows = daily_lows.dropna(how='all')
         daily_lows = daily_lows.fillna(method='ffill') + (daily_lows.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_lows = daily_lows.dropna(how='any')
         data.daily_lows = daily_lows
-        
+
     if need_volume:
         daily_volumes = daily_volumes.dropna(how='all')
         daily_volumes = daily_volumes.fillna(method='ffill') + (daily_volumes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_volumes = daily_volumes.dropna(how='any')
         data.daily_volumes = daily_volumes
-        
+
     if need_turnover:
         daily_turnovers = daily_turnovers.dropna(how='all')
         daily_turnovers = daily_turnovers.fillna(method='ffill') + (daily_turnovers.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_turnovers = daily_turnovers.dropna(how='any')
         data.daily_turnovers = daily_turnovers
-        
+
     if need_unadjustedclose:
         daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='all')
         daily_unadjustedcloses = daily_unadjustedcloses.fillna(method='ffill') + (daily_unadjustedcloses.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='any')
         data.daily_unadjustedcloses = daily_unadjustedcloses
-        
+
     if need_close:
         data.all_dates = daily_closes.index
     elif need_open:
@@ -670,7 +670,7 @@ def get_valid_dates(max_lookback=200,
 
     '''
     all_dates = data.all_dates[max_lookback:]
-    
+
     if start_trading != None:
         start = start_trading
     else:
@@ -679,7 +679,7 @@ def get_valid_dates(max_lookback=200,
         end = end_trading
     else:
         end = all_dates[-1]
-    
+
     nyse = mcal.get_calendar('NYSE')
     all_valid_dates = nyse.valid_days(start_date=start, end_date=end)
 
@@ -693,7 +693,7 @@ def get_valid_dates(max_lookback=200,
         date_list = all_dates
     else:
         raise ValueError('rebalance must be either "daily", "weekly", or "monthly"')
-        
+
     new_date_list = []
     for ind in range(len(date_list)):
         new_date = date_list[ind]
@@ -702,13 +702,13 @@ def get_valid_dates(max_lookback=200,
         while new_date not in all_valid_dates:
             new_date -= timedelta(days=1)
         new_date_list.append(new_date)
-    
+
     if end_trading != None:
         final_index = data.all_dates.get_loc(new_date_list[-1])
         data.all_dates = data.all_dates[:final_index]
-    
+
     return new_date_list
-    
+
 def initialise():
     '''
     Resets all variables before beginning a new backtest.
@@ -722,7 +722,7 @@ def initialise():
     data.positions_tracker = pd.DataFrame(index=data.daily_closes.index, columns=data.daily_closes.columns)
     data.current_date = data.start_date
     data.current_price = data.daily_closes.loc[data.current_date]
-    
+
     data.wealth_track = []
     data.date_track = []
     data.current_positions = set()
@@ -730,12 +730,12 @@ def initialise():
     data.cash = 100000
     data.wealth = 100000
     data.value_invested = 0
-    
+
     columns = ['long_or_short', 'symbol', 'open_date', 'open_price', 'amount',
                'open_value','open_reason', 'close_date', 'close_price',
                'close_value', 'close_reason', 'profit']
     data.trade_df = pd.DataFrame(columns=columns)
-    
+
 def update():
     '''
     Call this function at the end of each day of the backtest to calculate the
@@ -762,7 +762,7 @@ def update():
         all_closed_rows = data.trade_df[data.trade_df['close_price'].isnull()==False]
         data.trade_df.drop(all_closed_rows.index, inplace=True)
         data.trade_df.reset_index(drop=True, inplace=True)
-        
+
 
 def plot_results(benchmark=None,
                  start_date=date(2000,1,3),
@@ -799,7 +799,7 @@ def plot_results(benchmark=None,
     equity_df.set_index('date', inplace=True)
     equity_df = equity_df.loc[start_date:end_date]
     equity_df['equity'] = equity_df['equity'] - equity_df['equity'].iloc[0]
-    
+
     fig = go.Figure([go.Scatter(x=equity_df.index, y=equity_df['equity'], name='My Strategy')])
     if benchmark != None:
         comparison_DW = pd.read_csv(benchmark, index_col=0)
@@ -809,10 +809,10 @@ def plot_results(benchmark=None,
         fig.add_trace(go.Scatter(x=comparison_DW.index, y=comparison_DW[equity_label], name='Benchmark results'))
     fig.update_layout(template='plotly_dark', title=title)
     plot(fig, auto_open=True)
-    
+
 def git_trail():
+    '''
+    Some documentation
+    '''
     print('yay')
     return
-
-
-    

@@ -2,7 +2,7 @@
 """
 Created on Mon Jan 20 08:39:14 2020
 
-@author: User
+@author: Nick Elmer
 """
 import pandas as pd
 import data
@@ -16,16 +16,43 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 
 class Orders:
+    '''Places orders of specified types of a stock.
+
+    Parameters
+    ----------
+    symbol : str, or int
+        Either a symbol of a stock, eg. 'AAPL', or an asset id of that stock.
+        This must match the column header of the prices dataframe.
+    open_reason : str, default None
+        Populates the trade list 'open_reason' column in the trade list.
+    close_reason : str, default None
+        Populates the trade list 'close_reason' column in the trade list.
+    compound : bool, default False
+        Will affect the order_percent function and the order_target_percent
+        functions. These function will place an order at a value as a percentage
+        of your wealth instead of the starting amount.
+    able_to_exceed : bool, default True
+        If an order placed is such that the investment exeeds the starting
+        amount, then the order will be adjusted to enter in as many share as
+        possible without exceeding.
+    min_to_enter : int, default 10
+        The minimum number of shares you can open in a trade. eg. If value is
+        set to 10 and you attempt to order 3, the order will not be placed.
+
+    Examples
+    -------
+    Examples should be written in doctest format, and
+    should illustrate how to use the function/class.
+    >>>
+
+    '''
 
     def __init__(self, symbol, open_reason=None, close_reason=None,
                  compound=False, able_to_exceed=True, min_to_enter=10):
-        '''
-        Initialising the placement of an order.
+        '''Initialising the placement of an order.
 
         Currently, you must have a file called data.py in the directory for the
         variables to be stored in.
-
-        The Orders class is useless if used without one of its methods.
 
         Parameters
         ----------
@@ -120,9 +147,12 @@ class Orders:
         return
 
     def order_value(self, value, limit_price=None):
-        '''
-        Places an order for a given value of shares. Would recommend using
-        order_target_value instead
+        '''Places an order for a set value of shares.
+
+        An order for a given stock is placed and added to data.trade_df. If a
+        limit order is entered, then the function will ensure the price hits the
+        limit order on this day before entering. The entry price will be the
+        limit price in this scenario.
 
         Parameters
         ----------
@@ -133,7 +163,14 @@ class Orders:
 
         Returns
         -------
-        None. The function will update data.cash and also update data.trade_df
+        None. The function will update data.cash, data.trade_df,
+        data.current_positions, and data.value_invested.
+
+        Examples
+        --------
+        >>> Orders('ABC').order_value(10000)
+        Places an order of $10000 shares of ABC. The trade list will be updated
+        to represent this.
 
         '''
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
@@ -394,6 +431,34 @@ class Orders:
                         close_if_hit=True,
                         trade_number=None,
                         eod=False):
+        '''Checks to see if a stop loss of a stock is hit on this day.
+
+        Parameters
+        ----------
+        stop_loss_percent : float
+            The stop-loss value you wish to set. Usually is between 0 and 1.
+        close_if_hit : bool, default True
+            If the stop loss is hit, the trades are automatically closed.
+        trade_number : int, default None
+            Set to the specific number in the trade list of the trade you wish
+            to check.
+        eod : bool, default False
+            If you wish to only check for a hit stop loss on close data.
+            Otherwise the stop loss will be triggered if the price hits the stop
+            loss at any time.
+
+        Returns
+        -------
+        bool
+            Will return True if the stop-loss is hit, otherwise it will return
+            False.
+
+        Examples
+        -------
+        >>> Orders('SPY', close_reason='stop-loss').check_stop_loss(0.05)
+        True (if the value of your positions in SPY drop by 5% in this day)
+
+        '''
         if eod:
             todays_close = data.daily_closes[self.symbol].loc[data.current_date]
             if trade_number == None:

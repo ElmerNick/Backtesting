@@ -809,6 +809,10 @@ def plot_results(benchmark=None,
         fig.add_trace(go.Scatter(x=comparison_DW.index, y=comparison_DW[equity_label], name='Benchmark results'))
     fig.update_layout(template='plotly_dark', title=title)
     plot(fig, auto_open=True)
+    
+def git_trail():
+    print('yay')
+    return
 
 
     

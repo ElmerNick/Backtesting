@@ -10,70 +10,90 @@ from tqdm import tqdm
 import numpy as np
 from math import sqrt
 
+
 def RSI(prices, n=14):
     '''
-    Calculates all RSI_values for a given lookback period and produces a
-    pandas dataframe with the values linked to the dates they occured.
+    Calculates Relative Strength Index.
+
+    Calculates all the RSI values for time-series data with a given lookback
+    using Wilder's smoothing.
 
     Parameters
     ----------
     prices : pandas-dataframe
-        A dataframe of the values for RSIs to be calculated on.
-    n : int, optional
-        The lookback length for RSI calculations. The default is 14.
+        A dataframe populated with price data for any number of stocks.
+    n : type, default 14
+        The lookback period for RSI calculation.
 
     Returns
     -------
-    total_RSI : pandas-dataframe
-        Dataframe containing RSI calculations for each stock on each date.
-    '''
-    SF = 1/n
-    total_RSI = pd.DataFrame(index=prices.index, columns=prices.columns)
-    pbar = tqdm(total=len(prices.columns), position=0, desc='Calculating RSIs')
-    for stock in prices.columns:
-        NetChgAvg = 0
-        TotChgAvg = 0
-        stock_series = prices[stock].dropna()
-        all_RSI = pd.DataFrame(index=stock_series.index, columns=[stock_series.name])
-        for i in range(len(stock_series)):
-            if i > n:
-                Change = stock_series.iloc[i] - stock_series.iloc[i-1]
-                NetChgAvg = NetChgAvg + (SF * (Change - NetChgAvg))
-                TotChgAvg = TotChgAvg + (SF * (abs(Change) - TotChgAvg))
-            elif i < n:
-                pass
-            elif i == n:
-                prices_n = stock_series.iloc[i-n:i]
-                NetChgAvg = prices_n.iloc[-1] - prices_n.iloc[0]
-                diff = prices_n.diff().abs()
-                TotChgAvg = diff.mean()
-                
-            if TotChgAvg != 0:
-                ChgRatio = NetChgAvg / TotChgAvg
-            else:
-                ChgRatio = 0
-                
-            RSI = 50 * (ChgRatio + 1)
-            all_RSI[stock_series.name].iloc[i] = RSI
-        total_RSI[stock] = all_RSI
-        pbar.update(1)
-    pbar.close()
-        
-    return total_RSI
+    pandas-dataframe
+        A dataframe with all RSI caluations. The first `n` rows will be NaN.
 
-def RSI_new(prices, n=14):
+    Examples
+    -------
+    >>>df
+                    SPY_Closes  AAPL_Closes
+    2019-01-02  245.531174   155.214005
+    2019-01-03  239.672119   139.753540
+    2019-01-04  247.700104   145.719528
+    2019-01-07  249.653137   145.395172
+    2019-01-08  251.998703   148.166855
+    2019-01-09  253.176422   150.682983
+    2019-01-10  254.069519   151.164597
+    2019-01-11  254.167664   149.680466
+    2019-01-14  252.617004   147.429718
+    2019-01-15  255.512207   150.447113
+    2019-01-16  256.130493   152.285065
+    2019-01-17  258.073700   153.189301
+    2019-01-18  261.508636   154.132858
+    2019-01-22  257.975555   150.673172
+    2019-01-23  258.515350   151.282532
+    2019-01-24  258.652710   150.083435
+    2019-01-25  260.841309   155.056732
+    2019-01-28  258.858826   153.621765
+    2019-01-29  258.515350   152.029510
+    2019-01-30  262.607849   162.418396
+    2019-01-31  264.914185   163.588013
+    2019-02-01  265.041748   163.666641
+
+    >>>RSI(df, n=3)
+                    SPY_Closes  AAPL_Closes
+    2019-01-02         NaN          NaN
+    2019-01-03         NaN          NaN
+    2019-01-04         NaN          NaN
+    2019-01-07   73.720741    35.597653
+    2019-01-08   80.606633    53.063092
+    2019-01-09   83.803064    65.721523
+    2019-01-10   86.360271    68.185029
+    2019-01-11   86.706242    51.182345
+    2019-01-14   54.152828    32.657427
+    2019-01-15   77.651635    61.024874
+    2019-01-16   80.803434    71.856647
+    2019-01-17   88.469598    76.646324
+    2019-01-18   94.399664    81.558774
+    2019-01-22   52.634631    37.812653
+    2019-01-23   56.995042    45.531347
+    2019-01-24   58.454890    33.322985
+    2019-01-25   77.063521    75.009777
+    2019-01-28   47.907319    59.035409
+    2019-01-29   43.618567    43.585926
+    2019-01-30   78.314627    84.158836
+    2019-01-31   85.735172    85.874451
+    2019-02-01   86.128969    86.027049
+    '''
     delta = prices.diff()
     up, down = delta.copy(), delta.copy()
     up[up < 0] = 0
     down[down > 0] = 0
-    
+
     roll_up = up.ewm(alpha=1/n, min_periods=n).mean()
     roll_down = down.abs().ewm(alpha=1/n, min_periods=n).mean()
-    
+
     RS = roll_up / roll_down
     RSI = 100 - (100 / (1 + RS))
     return RSI
-    
+
 
 def SKEW(prices, n=10):
     '''
@@ -84,7 +104,7 @@ def SKEW(prices, n=10):
     prices : pandas-series
         A series of the values for skewness to be calculated on, with the last
         value being the current price in the backtest.
-    n : int, optional
+    n : int, default 10
         The lookback length for skewness calculations. The default is 10.
 
     Returns
@@ -92,6 +112,35 @@ def SKEW(prices, n=10):
     float
         the skewness value for the current date with the given lookback.
 
+    Examples
+    --------
+    >>>df
+                    SPY_Closes  AAPL_Closes
+    2019-01-02  245.531174   155.214005
+    2019-01-03  239.672119   139.753540
+    2019-01-04  247.700104   145.719528
+    2019-01-07  249.653137   145.395172
+    2019-01-08  251.998703   148.166855
+    2019-01-09  253.176422   150.682983
+    2019-01-10  254.069519   151.164597
+    2019-01-11  254.167664   149.680466
+    2019-01-14  252.617004   147.429718
+    2019-01-15  255.512207   150.447113
+    2019-01-16  256.130493   152.285065
+    2019-01-17  258.073700   153.189301
+    2019-01-18  261.508636   154.132858
+    2019-01-22  257.975555   150.673172
+    2019-01-23  258.515350   151.282532
+    2019-01-24  258.652710   150.083435
+    2019-01-25  260.841309   155.056732
+    2019-01-28  258.858826   153.621765
+    2019-01-29  258.515350   152.029510
+    2019-01-30  262.607849   162.418396
+    2019-01-31  264.914185   163.588013
+    2019-02-01  265.041748   163.666641
+
+    >>>SKEW(df['SPY_Closes'], n=10)
+    0.7066818016522822
     '''
     prices = prices.iloc[-n:]
     m = prices.mean()
@@ -102,7 +151,7 @@ def SKEW(prices, n=10):
             s += ((prices.iloc[-i] - m) / sdev)**3
         y = n / ((n-1) * (n-2))
     return y * s
-            
+
 def KURTOSIS(prices, n=10):
     '''
     Calculates kurtosis of a single stock.
@@ -124,8 +173,37 @@ def KURTOSIS(prices, n=10):
     -------
     float
         The value of kurtosis over the lookback period. Will return 0 if the
-        standard deviation of the given prices is negative
+        standard deviation of the given prices is negative.
 
+    Examples
+    --------
+    >>>df
+                    SPY_Closes  AAPL_Closes
+    2019-01-02  245.531174   155.214005
+    2019-01-03  239.672119   139.753540
+    2019-01-04  247.700104   145.719528
+    2019-01-07  249.653137   145.395172
+    2019-01-08  251.998703   148.166855
+    2019-01-09  253.176422   150.682983
+    2019-01-10  254.069519   151.164597
+    2019-01-11  254.167664   149.680466
+    2019-01-14  252.617004   147.429718
+    2019-01-15  255.512207   150.447113
+    2019-01-16  256.130493   152.285065
+    2019-01-17  258.073700   153.189301
+    2019-01-18  261.508636   154.132858
+    2019-01-22  257.975555   150.673172
+    2019-01-23  258.515350   151.282532
+    2019-01-24  258.652710   150.083435
+    2019-01-25  260.841309   155.056732
+    2019-01-28  258.858826   153.621765
+    2019-01-29  258.515350   152.029510
+    2019-01-30  262.607849   162.418396
+    2019-01-31  264.914185   163.588013
+    2019-02-01  265.041748   163.666641
+
+    >>>KURTOSIS(df['SPY_Closes'], n=10)
+    -1.0539330782600977
     '''
     if n <= 3:
         raise ValueError('Kurtosis Length must be greater than 3')
@@ -142,7 +220,7 @@ def KURTOSIS(prices, n=10):
         return p1 * p2 - p3
     else:
         return 0
-     
+
 def HistoricVolatility(prices, n=100):
     '''
     Calculates all annualised volatility values of a given price set.
@@ -159,9 +237,40 @@ def HistoricVolatility(prices, n=100):
     -------
     pandas-dataframe
         A datframe with the calculated historic volatilities with the given
-        lookback. The first n rows will be NaN as they are needed to gain
+        lookback. The first `n` rows will be NaN as they are needed to gain
         enough information for a sufficient lookback.
 
+    Examples
+    --------
+    >>>df
+    SPY_Closes  AAPL_Closes
+    2010-01-04   92.788445    26.538448
+    2010-01-05   93.034065    26.584333
+    2010-01-06   93.099564    26.161472
+    2010-01-07   93.492561    26.113111
+    2010-01-08   93.803688    26.286718
+    ...                ...          ...
+    2019-12-24  321.230011   283.596924
+    2019-12-26  322.940002   289.223602
+    2019-12-27  322.859985   289.113831
+    2019-12-30  321.079987   290.829773
+    2019-12-31  321.859985   292.954712
+    [2516 rows x 2 columns]
+
+    >>>HistoricVolatility(df, n=4)
+                    SPY_Closes  AAPL_Closes
+    2010-01-04         NaN          NaN
+    2010-01-05         NaN          NaN
+    2010-01-06         NaN          NaN
+    2010-01-07         NaN          NaN
+    2010-01-08    2.365432    15.464532
+    ...                ...          ...
+    2019-12-24    3.315624    13.080743
+    2019-12-26    3.895287    17.195093
+    2019-12-27    4.060394    16.336670
+    2019-12-30    7.025943    14.528539
+    2019-12-31    7.317238    13.302135
+    [2516 rows x 2 columns]
     '''
     return np.log(1 + prices.pct_change()).rolling(n).std() * sqrt(252) * 100
 
@@ -182,8 +291,57 @@ def HighestHigh(prices, n=5):
     -------
     pandas-dataframe
         Dataframe populated with boolean values. True if the cell is the
-        highest over the n-1 cells before (as n includes the current one).
+        highest over the `n-1` cells before (as `n` includes the current one).
 
+    Examples
+    --------
+    >>>df
+                SPY_Closes  AAPL_Closes
+    2019-12-02  310.115326   263.534546
+    2019-12-03  308.035522   258.835724
+    2019-12-04  309.936188   261.120270
+    2019-12-05  310.493439   264.951172
+    2019-12-06  313.329498   270.069031
+    2019-12-09  312.344360   266.288025
+    2019-12-10  311.996063   267.844330
+    2019-12-11  312.881714   270.128906
+    2019-12-12  315.578461   270.817261
+    2019-12-13  315.767517   274.498535
+    2019-12-16  317.936859   279.197357
+    2019-12-17  318.006531   279.746094
+    2019-12-18  318.026398   279.077667
+    2019-12-19  319.329987   279.356995
+    2019-12-20  320.730011   278.778381
+    2019-12-23  321.220001   283.327576
+    2019-12-24  321.230011   283.596924
+    2019-12-26  322.940002   289.223602
+    2019-12-27  322.859985   289.113831
+    2019-12-30  321.079987   290.829773
+    2019-12-31  321.859985   292.954712
+
+    >>>HighestHigh(df, n=5)
+                    SPY_Closes  AAPL_Closes
+    2019-12-02       False        False
+    2019-12-03       False        False
+    2019-12-04       False        False
+    2019-12-05       False        False
+    2019-12-06        True         True
+    2019-12-09       False        False
+    2019-12-10       False        False
+    2019-12-11       False         True
+    2019-12-12        True         True
+    2019-12-13        True         True
+    2019-12-16        True         True
+    2019-12-17        True         True
+    2019-12-18        True        False
+    2019-12-19        True        False
+    2019-12-20        True        False
+    2019-12-23        True         True
+    2019-12-24        True         True
+    2019-12-26        True         True
+    2019-12-27       False        False
+    2019-12-30       False         True
+    2019-12-31       False         True
     '''
     return prices.rolling(n).max() == prices
 
@@ -215,7 +373,7 @@ def TrueRangeCustom(Highs, Lows, Closes):
         stock_df['Low'] = Lows[stock]
         stock_df['Close'] = Closes[stock]
         stock_df.dropna(inplace=True)
-        
+
         all_true_range = pd.Series(index=stock_df.index)
         for i in range(1, len(stock_df)):
             THigh = stock_df['High'].iloc[i]
@@ -264,7 +422,7 @@ def ADX(Highs, Lows, Closes, length=10):
         PriceL = Lows[stock].dropna()
         PriceC = Closes[stock].dropna()
         all_ADX = pd.Series(index=PriceC.index)
-        
+
         sumPlusDM = 0
         sumMinusDM = 0
         sumTR = 0
@@ -301,26 +459,26 @@ def ADX(Highs, Lows, Closes, length=10):
                 oVolty = oVolty + SF * (stock_TR.loc[PriceC.index[i]] - oVolty)
             else:
                 continue
-                
+
             if oVolty > 0:
                 oDMIPlus = 100 * AvgPlusDM / oVolty
                 oDMIMinus = 100 * AvgMinusDM / oVolty
             else:
                 oDMIPlus = 0
                 oDMIMinus = 0
-                
+
             Divisor = oDMIPlus + oDMIMinus
             if Divisor > 0:
                 oDMI = 100 * abs(oDMIPlus - oDMIMinus) / Divisor
             else:
                 oDMI = 0
-                
+
             if length < i <= length*2:
                 oDMIsum += oDMI
                 oADX = oDMIsum / (i + 1 - length)
             else:
                 oADX = oADX +  SF * (oDMI - oADX)
-            
+
             all_ADX.iloc[i] = oADX
         ADX_df[stock] = all_ADX
         pbar.update(1)
@@ -429,7 +587,37 @@ def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
     -------
     pandas-dataframe
         Time-series dataframe with the average true range values for each day
-        for each stock. The first 'length' stocks will be NaN.
+        for each stock. The first `length` stocks will be NaN.
+
+    Examples
+    --------
+    >>>df
+                 SPY_Highs  AAPL_Highs  ...  SPY_Closes  AAPL_Closes
+    2019-12-02  313.120544  313.120544  ...  310.115326   263.534546
+    2019-12-03  308.125122  308.125122  ...  308.035522   258.835724
+    2019-12-04  310.592957  310.592957  ...  309.936188   261.120270
+    2019-12-05  310.722321  310.722321  ...  310.493439   264.951172
+    2019-12-06  313.767365  313.767365  ...  313.329498   270.069031
+    2019-12-09  313.637970  313.637970  ...  312.344360   266.288025
+    2019-12-10  313.011047  313.011047  ...  311.996063   267.844330
+    2019-12-11  313.160339  313.160339  ...  312.881714   270.128906
+    2019-12-12  316.434235  316.434235  ...  315.578461   270.817261
+    2019-12-13  317.110931  317.110931  ...  315.767517   274.498535
+    2019-12-16  318.583679  318.583679  ...  317.936859   279.197357
+    2019-12-17  318.683197  318.683197  ...  318.006531   279.746094
+    2019-12-18  318.683197  318.683197  ...  318.026398   279.077667
+    2019-12-19  319.409637  319.409637  ...  319.329987   279.356995
+    2019-12-20  321.974213  321.974213  ...  320.730011   278.778381
+    2019-12-23  321.649994  321.649994  ...  321.220001   283.327576
+    2019-12-24  321.519989  321.519989  ...  321.230011   283.596924
+    2019-12-26  322.950012  322.950012  ...  322.940002   289.223602
+    2019-12-27  323.799988  323.799988  ...  322.859985   289.113831
+    2019-12-30  323.100006  323.100006  ...  321.079987   290.829773
+    2019-12-31  322.130005  322.130005  ...  321.859985   292.954712
+
+    The two missing columns are the Lows of the stocks.
+
+    >>>Not completed yet.
 
     '''
     True_Ranges = TrueRange(Highs, Lows, Closes)
@@ -438,42 +626,3 @@ def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
     elif method == 'wilders':
         Avg_True_Ranges = True_Ranges.ewm(alpha=1/length, min_periods=length).mean()
     return Avg_True_Ranges
-    
-    
-            
-            
-            
-            
-            
-
-            
-            
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-     

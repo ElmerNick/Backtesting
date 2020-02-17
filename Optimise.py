@@ -37,24 +37,24 @@ def create_variable_combinations(list_of_series):
     for series in list_of_series:
         variable_names.append(series.name)
         list_of_lists.append(series.tolist())
-    
+
     combinations = itertools.product(*list_of_lists)
     combo_list = []
     for combo in combinations:
         combo_list.append(combo)
-    
+
     combo_df = pd.DataFrame(index=range(len(combo_list)), columns=variable_names)
     for i in range(len(combo_list)):
         combo = combo_list[i]
         combo_df.iloc[i] = combo
-    
+
     data.combination_df = combo_df
-    
+
     data.optimisation_report = pd.DataFrame(index=range(len(combo_df)),
                                             columns=combo_df.columns)
     data.optimisation_wealth_tracks = []
     data.length_of_backtest = 0
-        
+
 def record_backtest(combination_row):
     '''
     Called at the end of every backtest record the results in
@@ -77,8 +77,8 @@ def record_backtest(combination_row):
         data.length_of_backtest = len(data.wealth_track) / 252
     profit_as_percent = 100*(total_profit / data.starting_amount)
     realised_rate = profit_as_percent / data.length_of_backtest
-    
-    
+
+
     data.optimisation_report.loc[combination_row] = data.combination_df.iloc[combination_row]
     data.optimisation_report.at[combination_row, 'total_profit'] = total_profit
     data.optimisation_report.at[combination_row, 'realised_rate'] = realised_rate
@@ -89,10 +89,10 @@ def plot_tests(test_numbers, title=None):
         profit_series = data.optimisation_wealth_tracks[n] - 100000
         final_equity = profit_series.iloc[-1]
         fig.add_trace(go.Scatter(x=profit_series.index, y=profit_series, name=str(n) + ' ' + str(final_equity)))
-    
+
     fig.update_layout(template='plotly_dark', title=title)
     plot(fig, auto_open=True)
-    
+
 def average_per_parameter(results):
     averages_df = pd.DataFrame(columns=['average'])
     for param in data.combination_df.columns:
@@ -102,23 +102,3 @@ def average_per_parameter(results):
             index_label = str(param) + ' = ' + str(val)
             averages_df.at[index_label, 'average'] = average
     return averages_df
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

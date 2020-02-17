@@ -16,7 +16,8 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 
 class Orders:
-    '''Places orders of specified types of a stock.
+    '''
+    Places orders of specified types of a stock.
 
     Parameters
     ----------
@@ -49,7 +50,8 @@ class Orders:
 
     def __init__(self, symbol, open_reason=None, close_reason=None,
                  compound=False, able_to_exceed=True, min_to_enter=10):
-        '''Initialising the placement of an order.
+        '''
+        Initialising the placement of an order.
 
         Currently, you must have a file called data.py in the directory for the
         variables to be stored in.
@@ -147,7 +149,8 @@ class Orders:
         return
 
     def order_value(self, value, limit_price=None):
-        '''Places an order for a set value of shares.
+        '''
+        Places an order for a set value of shares.
 
         An order for a given stock is placed and added to data.trade_df. If a
         limit order is entered, then the function will ensure the price hits the
@@ -191,7 +194,8 @@ class Orders:
         return self.order_amount(amount) # Places an order for the calculated number of shares
 
     def order_percent(self, percent, limit_price=None):
-        ''' Orders a percent of your starting cash.
+        '''
+        Orders a percent of your starting cash.
 
         Places an order for a given percent of your starting cash. If compound
         is set to true, will instead use percent of your current wealth. This
@@ -235,7 +239,8 @@ class Orders:
         return self.order_value(value)
 
     def order_target_amount(self, target_amount, limit_price=None):
-        '''Orders a number of shares of a stock.
+        '''
+        Orders a number of shares of a stock.
 
         Will put an order in for a target amount of shares. If negative, will
         place a short order.
@@ -304,7 +309,8 @@ class Orders:
         return
 
     def order_target_value(self, target_value, limit_price=None):
-        '''Orders a specified value of shares of a stock.
+        '''
+        Orders a specified value of shares of a stock.
 
         Will put an order in for a target value of shares. If negative, will
         place a short order.
@@ -463,7 +469,8 @@ class Orders:
                         close_if_hit=True,
                         trade_number=None,
                         eod=False):
-        '''Checks to see if a stop loss of a stock is hit on this day.
+        '''
+        Checks to see if a stop loss of a stock is hit on this day.
 
         Parameters
         ----------
@@ -583,7 +590,8 @@ def get_norgatedata(symbol_list,
                     start_when_all_are_in=True,
                     adjustment='TotalReturn',
                     progress_desc='Downloading Norgate Data'):
-    '''Downloads data from NorgateData.
+    '''
+    Downloads data from NorgateData.
 
     Creates dataframes of norgate data for the symbols provided. The dataframes
     are stored in data.
@@ -594,24 +602,24 @@ def get_norgatedata(symbol_list,
         A list containing all the symbols of data to be gathered.
     start_date : datetime, default date(2000,1,1)
         The start date you wish to get data from.
-    end_date : datetime, optional
-        The end date you wish to get data to. The default is date(2020,1,2).
-    fields: list, optional
+    end_date : datetime, default date(2020,1,2)
+        The end date you wish to get data to.
+    fields: list, default ['Close']
         A list of the fields you wish to download. Must contain any combination
         of {'Open', 'High', 'Low', 'Close', 'Volume', 'Turnover', 'Unadjusted
-        Close'}. The default is ['Close']
-    start_when_all_are_in : bool, optional
+        Close'}.
+    start_when_all_are_in : bool, default True.
         Determines whether or not to drop all dates that do not contain any
         data for the stocks. If set to True, will drop the dates that any
-        stock is missing data. The default is True.
-    adjustment : {'TotalReturn', 'None'}, optional
-        The type of adjustment desired for the data. The default is
-        'TotalReturn'.
+        stock is missing data.
+    adjustment : {'TotalReturn', 'Capital', 'None'}, default 'TotalReturn'.
+        The type of adjustment desired for the data.
 
     Returns
     -------
     None. The data stored in data.daily_{opens, highs, lows, closes, volumes,
     turnovers}
+
 
     '''
     all_dates = pd.date_range(start=start_date, end=end_date)

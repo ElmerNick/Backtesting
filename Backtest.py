@@ -191,22 +191,36 @@ class Orders:
         return self.order_amount(amount) # Places an order for the calculated number of shares
 
     def order_percent(self, percent, limit_price=None):
-        '''
-        Places an order for a given percent of your starting cash. If coumpund
-        is set to true, will instead use percent of your current wealth. Would
-        recommend using order_target_percent instead
+        ''' Orders a percent of your starting cash.
+
+        Places an order for a given percent of your starting cash. If compound
+        is set to true, will instead use percent of your current wealth. This
+        places a fixed order of a value which will be calculated in the functions
+        and should not be used to close order. If the value is negative then a
+        short order will be placed.
 
         Parameters
         ----------
         percent : float
             Must be less than or equal to 1. The percent of your portfolio to
             allocate to this order.
-        limit_price : float, optional
-            Price to put a limit order in at. The default is None.
+        limit_price : float, default None
+            Price to put a limit order in at.
 
         Returns
         -------
         None. The function will update data.cash and also update data.trade_df
+
+        Examples
+        --------
+        >>> Orders('SPY').order_percent(0.1)
+
+        Will order 10% of your starting cash. If you started with $10000, you
+        will order $1000 of SPY
+
+        >>> Orders('AAPL', compound=True).order_percent(-0.05)
+
+        Will place a short order 5% of your current wealth.
 
         '''
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
@@ -221,7 +235,8 @@ class Orders:
         return self.order_value(value)
 
     def order_target_amount(self, target_amount, limit_price=None):
-        '''
+        '''Orders a number of shares of a stock.
+
         Will put an order in for a target amount of shares. If negative, will
         place a short order.
 
@@ -229,8 +244,8 @@ class Orders:
         ----------
         target_amount : int
             The desired amount of shares to hold for the stock.
-        limit_price : float, optional
-            Price to put a limit order in at. The default is None.
+        limit_price : float, default None
+            Price to put a limit order in at.
 
         Returns
         -------
@@ -243,12 +258,10 @@ class Orders:
         This places an order such that you will own 50 shares of SPY at the
         close of today.
 
-
         >>> Orders('IEF').order_target_amount(0)
 
         This will ensure that you will exit all positions of IEF at the close
         of the day
-
 
         >>> Orders('SPY', open_reason='Entry 1').order_target_amount(-100, limit_order=101.3)
 
@@ -291,7 +304,8 @@ class Orders:
         return
 
     def order_target_value(self, target_value, limit_price=None):
-        '''
+        '''Orders a specified value of shares of a stock.
+
         Will put an order in for a target value of shares. If negative, will
         place a short order.
 
@@ -299,8 +313,8 @@ class Orders:
         ----------
         target_value : float
             The desired value of shares to hold for the stock.
-        limit_price : float, optional
-            Price to put a limit order in at. The default is None.
+        limit_price : float, default None
+            Price to put a limit order in at
 
         Returns
         -------
@@ -321,7 +335,8 @@ class Orders:
         >>> Orders('SPY', open_reason='Entry 1').order_target_value(-10000, limit_order=101.3)
 
         This will ensure you are short 100 shares of SPY if the limit price of
-        $101.3 is hit on that day.
+        $101.3 is hit on that day. The open_reason column in data.trade_df will
+        say 'Entry 1' for this trade.
         '''
 
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
@@ -345,15 +360,32 @@ class Orders:
         Parameters
         ----------
         target_percent : float
-            The desired percent of your portfolio to allocate (must be less
+            The desired percent of your portfolio to allocate (should be less
             than or equal to 1).
-        limit_price : float, optional
-            Price to put a limit order in at. The default is None.
+        limit_price : float, default None
+            Price to put a limit order in at.
 
         Returns
         -------
         None. The function will update data.cash and also update data.trade_df
 
+        Examples
+        --------
+        >>> Orders('SPY').order_target_percent(0.05)
+
+        This places an order such that you will own as close to 5% of your
+        starting amount worth of SPY as possible at the close of today.
+
+        >>> Orders('IEF').order_target_percent(0)
+
+        This will ensure that you will exit all positions of IEF at the close
+        of the day
+
+        >>> Orders('SPY', open_reason='Entry 1', compund=True).order_target_percent(-0.1, limit_order=101.3)
+
+        This will ensure you are short in SPY at a value as close to 10% of your
+        current wealth if the limit price of $101.3 is hit on that day. The
+        open_reason column in data.trade_df will say 'Entry 1' for this trade.
         '''
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
@@ -551,7 +583,8 @@ def get_norgatedata(symbol_list,
                     start_when_all_are_in=True,
                     adjustment='TotalReturn',
                     progress_desc='Downloading Norgate Data'):
-    '''
+    '''Downloads data from NorgateData.
+
     Creates dataframes of norgate data for the symbols provided. The dataframes
     are stored in data.
 
@@ -559,9 +592,8 @@ def get_norgatedata(symbol_list,
     ----------
     symbol_list : list
         A list containing all the symbols of data to be gathered.
-    start_date : datetime, optional
-        The start date you wish to get data from. The default is
-        date(2000,1,1).
+    start_date : datetime, default date(2000,1,1)
+        The start date you wish to get data from.
     end_date : datetime, optional
         The end date you wish to get data to. The default is date(2020,1,2).
     fields: list, optional

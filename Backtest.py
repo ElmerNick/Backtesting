@@ -109,8 +109,7 @@ class Orders:
                 self.price = limit_price
                 self.limit_passed = True
             else:
-                data.order_placed = False
-                return
+                return False
 
         value_of_order = amount * self.price
         value_space = data.starting_amount - data.value_invested # This is used only if self.able_to_exceed == False
@@ -126,8 +125,7 @@ class Orders:
                 amount = ceil(-value_space/self.price) # Recalculates the amount to place an order for
                 value_of_order = amount * self.price
         if -10 <= amount <= 10:
-            data.order_placed = False
-            return
+            return False
 
         data.trade_df = data.trade_df.append({
             'long_or_short': type_of_order,
@@ -144,9 +142,8 @@ class Orders:
         data.current_positions.add(self.symbol) # NOTE: This will not work if you are using a non-target function to sell shares!
         data.cash -= abs(value_of_order) # Removing the value of the order from our cash. Notice it does not add anything in for short orders
         data.value_invested += abs(value_of_order) # Increasing the value of our total open positions
-        data.order_placed = True
 
-        return
+        return True
 
     def order_value(self, value, limit_price=None):
         '''
@@ -182,7 +179,7 @@ class Orders:
                 self.price = limit_price
                 self.limit_passed = True
             else:
-                return
+                return False
         # Below we calculate the number of shares to purchase based on the vlaue of the order
         # Note that these calculations ensure that the order will not exceed the value
         if value > 0:
@@ -190,7 +187,7 @@ class Orders:
         elif value < 0:
             amount = ceil(value/self.price)
         else:
-            return
+            return False
         return self.order_amount(amount) # Places an order for the calculated number of shares
 
     def order_percent(self, percent, limit_price=None):
@@ -233,7 +230,7 @@ class Orders:
                 self.price = limit_price
                 self.limit_passed = True
             else:
-                return
+                return False
         # Note below that self.capital will be the starting amount if self.compound == False
         value = percent * self.capital # Calclulating the value of the order based on the percent
         return self.order_value(value)
@@ -279,11 +276,11 @@ class Orders:
                 self.price = limit_price
                 self.limit_passed = True
             else:
-                return
+                return False
         if (target_amount > self.current_number_of_shares >= 0) or (target_amount < self.current_number_of_shares <= 0): # Either going more long or more short
             amount_to_order = target_amount - self.current_number_of_shares
             if abs(amount_to_order) < self.min_to_enter:
-                return
+                return False
             else:
                 return self.order_amount(amount_to_order)
         elif self.current_number_of_shares > target_amount >= 0 or self.current_number_of_shares < target_amount <= 0: # Remaining long/short but closing some shares
@@ -305,8 +302,7 @@ class Orders:
                 self._fully_close_row(trade_number=index)
             return self.order_amount(target_amount)
         else:
-            return
-        return
+            return False
 
     def order_target_value(self, target_value, limit_price=None):
         '''
@@ -351,7 +347,7 @@ class Orders:
                 self.price = limit_price
                 self.limit_passed = True
             else:
-                return
+                return False
         if target_value >= 0:
             target_amount = floor(target_value/self.price)
         elif target_value < 0:
@@ -399,7 +395,7 @@ class Orders:
                 self.price = limit_price
                 self.limit_passed = True
             else:
-                return
+                return False
         target_value = (target_percent) * self.capital
         return self.order_target_value(target_value)
 
@@ -749,6 +745,47 @@ def get_norgatedata(symbol_list,
         data.all_dates = daily_turnovers.index
     else:
         print('The error occured because no OHL or C was selected')
+
+def get_csv_data(folder_path,
+                 data_format='combined',
+                 start_date=date(2000,1,1),
+                 end_date=datetime.now().date(),
+                 start_when_all_are_in=True):
+    '''Short summary.
+
+    Parameters
+    ----------
+    folder_path : type
+        Description of parameter `folder_path`.
+    format : type
+        Description of parameter `format`.
+    start_date : type
+        Description of parameter `start_date`.
+    end_date : type
+        Description of parameter `end_date`.
+    start_when_all_are_in : type
+        Description of parameter `start_when_all_are_in`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    '''
+    all_files = {fname[:-4]: pd.read_csv(folder_path+'\\'+fname, index_col=0, parse_dates=True) for fname in os.listdir(folder_path)}
+    if data_format == 'combined':
+        for fname, daily_data in all_files.items():
+            daily_data = daily_data.loc[start_date:end_date]
+            if start_when_all_are_in:
+                daily_data.dropna(how='any')
+            else:
+                daily_data.dropna(how='all')
+            exec('data.{} = daily_data'.format(fname))
+        try:
+            data.all_dates = data.daily_closes.index
+        except AttributeError:
+            raise NameError('ensure there is a daily_closes.csv in the source path.')
+
 
 def get_valid_dates(max_lookback=200,
                     rebalance='daily',

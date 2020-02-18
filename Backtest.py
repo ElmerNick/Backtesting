@@ -282,7 +282,7 @@ class Orders:
                 return
         if (target_amount > self.current_number_of_shares >= 0) or (target_amount < self.current_number_of_shares <= 0): # Either going more long or more short
             amount_to_order = target_amount - self.current_number_of_shares
-            if abs(amount) < self.min_to_enter:
+            if abs(amount_to_order) < self.min_to_enter:
                 return
             else:
                 return self.order_amount(amount_to_order)
@@ -614,13 +614,17 @@ def get_norgatedata(symbol_list,
         stock is missing data.
     adjustment : {'TotalReturn', 'Capital', 'None'}, default 'TotalReturn'.
         The type of adjustment desired for the data.
+    progress_desc : str, default 'Downloading Norgate Data'
+        The message you would like to appear in the progress bar while data is
+        downloading.
 
     Returns
     -------
     None. The data stored in data.daily_{opens, highs, lows, closes, volumes,
     turnovers}
 
-
+    Examples
+    --------
     '''
     all_dates = pd.date_range(start=start_date, end=end_date)
     if adjustment == 'TotalReturn':
@@ -758,14 +762,14 @@ def get_valid_dates(max_lookback=200,
     ----------
     max_lookback : int, optional
         The maximum lookback needed for your backtest. The default is 200.
-    rebalance : {'daily', 'weekly', 'monthly'}, optional
+    rebalance : {'daily', 'weekly', 'month-end', 'month-start'}, default 'daily'
         The frequency you wish to rebalance your portfolio. You have a choice
-        of 'daily', 'weekly' or 'monthly'. The default is 'daily'.
+        of 'daily', 'weekly', 'month-end' or 'month-start'.
 
     Raises
     ------
     ValueError
-        If the rebalance is not 'daily', 'weekly' or 'monthly'.
+        If the rebalance is not 'daily', 'weekly' or 'month-end' or 'month-start'.
 
     Returns
     -------
@@ -797,7 +801,7 @@ def get_valid_dates(max_lookback=200,
     elif rebalance == 'daily':
         date_list = all_dates
     else:
-        raise ValueError('rebalance must be either "daily", "weekly", or "monthly"')
+        raise ValueError('rebalance must be either "daily", "weekly", "month-end", or "month-start"')
 
     new_date_list = []
     for ind in range(len(date_list)):

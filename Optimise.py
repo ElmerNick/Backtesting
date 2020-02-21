@@ -84,6 +84,33 @@ def record_backtest(combination_row):
     data.optimisation_report.at[combination_row, 'realised_rate'] = realised_rate
 
 def plot_tests(test_numbers, title=None):
+    '''
+    Provide some test numbers from the optimisation just run to plot.
+
+    After running an optimisation, whilst you still have the
+    data.optimisation_wealth_tracks variable accessible by your editor. This
+    function will produce a plotly line graph of the tests that you provide as
+    a list.
+
+    Parameters
+    ----------
+    test_numbers : list
+        A list of integers referring to test numbers of an optimsation report.
+    title : str, default None
+        The title you would like to appear at the top of the plot.
+
+    Returns
+    -------
+    None
+        Automatically opens a .html plot in your default browser.
+
+    Examples
+    -------
+    Examples should be written in doctest format, and
+    should illustrate how to use the function/class.
+    >>>
+
+    '''
     fig = go.Figure()
     for n in test_numbers:
         profit_series = data.optimisation_wealth_tracks[n] - 100000
@@ -94,6 +121,29 @@ def plot_tests(test_numbers, title=None):
     plot(fig, auto_open=True)
 
 def average_per_parameter(results):
+    '''
+    Get the average profit over all optimsations for each parameter variation.
+
+    For each parameter and each value it can take in an optimisation, this
+    calculates the average total profit produced by it.
+
+    Parameters
+    ----------
+    results : pandas-dataframe
+        A dataframe of the results of the optimisation.
+
+    Returns
+    -------
+    pandas-series
+        Series with all the relevent information
+
+    Examples
+    -------
+    Examples should be written in doctest format, and
+    should illustrate how to use the function/class.
+    >>>
+
+    '''
     averages_df = pd.DataFrame(columns=['average'])
     for param in data.combination_df.columns:
         variations = results[param].value_counts().index

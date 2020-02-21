@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 import pandas_market_calendars as mcal
 from datetime import datetime, timedelta
 from tqdm import tqdm
+import os
 
 class Orders:
     '''
@@ -859,6 +860,20 @@ def initialise():
     '''
     Resets all variables before beginning a new backtest.
 
+    Sets data.start_date to the first tradeable data based on data.daily_closes
+    and max_lookback.
+    Sets data.positions_tracker to an empty dataframe with column headers equal
+    to all stocks in the universe in use.
+    Sets data.current_date to data.start_date.
+    Sets data.current_price to data.daily_closes on the current date.
+    Sets data.wealth track to an empty list.
+    Sets data.date_track to an empty list.
+    Sets data.cash to data.starting_amount.
+    Sets data.wealth to data.starting_amount.
+    Sets data.value_invested to 0
+    Recreates data.trade_df with the appropriate column headers.
+
+
     Returns
     -------
     None.
@@ -872,9 +887,9 @@ def initialise():
     data.wealth_track = []
     data.date_track = []
     data.current_positions = set()
-    data.starting_amount = 100000
-    data.cash = 100000
-    data.wealth = 100000
+    #data.starting_amount = 100000
+    data.cash = data.starting_amount
+    data.wealth = data.starting_amount
     data.value_invested = 0
 
     columns = ['long_or_short', 'symbol', 'open_date', 'open_price', 'amount',
@@ -921,21 +936,20 @@ def plot_results(benchmark=None,
 
     Parameters
     ----------
-    benchmark : str, optional
+    benchmark : str, default None
         The file location of an equity series that can be plotted on the same
         graph as the backtest result. Must have the column header 'equity'.
-        The default is None.
-    start_date : datetime, optional
-        The start date of the plot. The default is date(2000,1,3).
-    end_date : datetime, optional
-        The end date of the plot. The default is date(2019,12,31).
-    title : str, optional
-        The title which will appear at the top of the plot. The default is
-        None.
+    start_date : datetime, default date(200,1,3)
+        The start date of the plot.
+    end_date : datetime, defaul date(2019,12,31)
+        The end date of the plot.
+    title : str, default None
+        The title which will appear at the top of the plot.
 
-    Returns
-    -------
-    None.
+    Notes
+    -----
+    Look in to the ability to plot drawdown and other useful plots. Look at
+    tradestation for various useful graphs.
 
     '''
     wealth_list = [x - 100000 for x in data.wealth_track]
@@ -955,7 +969,3 @@ def plot_results(benchmark=None,
         fig.add_trace(go.Scatter(x=comparison_DW.index, y=comparison_DW[equity_label], name='Benchmark results'))
     fig.update_layout(template='plotly_dark', title=title)
     plot(fig, auto_open=True)
-
-def home_test():
-    print('test')
-    return

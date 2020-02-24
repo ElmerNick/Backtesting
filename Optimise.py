@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 
 
 def create_variable_combinations(list_of_series):
-    '''
+    """
     Creates a dataframe with column headers that are the names of the variables
     to be optimised on. The rows contain every possible combination of the
     parameters.
@@ -31,7 +31,7 @@ def create_variable_combinations(list_of_series):
     empty optimisation report in data.optimisation_report. Creates an empty
     list to store lists of wealth tracks in data.optimisation_wealth_tracks.
 
-    '''
+    """
     variable_names = []
     list_of_lists = []
     for series in list_of_series:
@@ -56,7 +56,7 @@ def create_variable_combinations(list_of_series):
     data.length_of_backtest = 0
 
 def record_backtest(combination_row):
-    '''
+    """
     Called at the end of every backtest record the results in
     data.optimisation_report.
 
@@ -69,7 +69,7 @@ def record_backtest(combination_row):
     -------
     None. Stores the results of the backtest in data.optimisation_report.
 
-    '''
+    """
     total_profit = data.wealth_track[-1] - data.starting_amount
     wealth_track_df = pd.Series(data=data.wealth_track, index=data.date_track, name=combination_row)
     data.optimisation_wealth_tracks.append(wealth_track_df)
@@ -84,7 +84,7 @@ def record_backtest(combination_row):
     data.optimisation_report.at[combination_row, 'realised_rate'] = realised_rate
 
 def plot_tests(test_numbers, title=None):
-    '''
+    """
     Provide some test numbers from the optimisation just run to plot.
 
     After running an optimisation, whilst you still have the
@@ -110,7 +110,7 @@ def plot_tests(test_numbers, title=None):
     should illustrate how to use the function/class.
     >>>
 
-    '''
+    """
     fig = go.Figure()
     for n in test_numbers:
         profit_series = data.optimisation_wealth_tracks[n] - 100000
@@ -121,7 +121,7 @@ def plot_tests(test_numbers, title=None):
     plot(fig, auto_open=True)
 
 def average_per_parameter(results):
-    '''
+    """
     Get the average profit over all optimsations for each parameter variation.
 
     For each parameter and each value it can take in an optimisation, this
@@ -143,7 +143,7 @@ def average_per_parameter(results):
     should illustrate how to use the function/class.
     >>>
 
-    '''
+    """
     averages_df = pd.DataFrame(columns=['average'])
     for param in data.combination_df.columns:
         variations = results[param].value_counts().index

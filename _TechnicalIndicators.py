@@ -12,7 +12,7 @@ from math import sqrt
 
 
 def RSI(prices, n=14):
-    '''
+    """
     Calculates Relative Strength Index.
 
     Calculates all the RSI values for time-series data with a given lookback
@@ -81,7 +81,7 @@ def RSI(prices, n=14):
     2019-01-30   78.314627    84.158836
     2019-01-31   85.735172    85.874451
     2019-02-01   86.128969    86.027049
-    '''
+    """
     delta = prices.diff()
     up, down = delta.copy(), delta.copy()
     up[up < 0] = 0
@@ -96,7 +96,7 @@ def RSI(prices, n=14):
 
 
 def SKEW(prices, n=10):
-    '''
+    """
     Calculates current skewness of a single stock.
 
     Parameters
@@ -141,7 +141,7 @@ def SKEW(prices, n=10):
 
     >>>SKEW(df['SPY_Closes'], n=10)
     0.7066818016522822
-    '''
+    """
     prices = prices.iloc[-n:]
     m = prices.mean()
     sdev = prices.std()
@@ -153,7 +153,7 @@ def SKEW(prices, n=10):
     return y * s
 
 def KURTOSIS(prices, n=10):
-    '''
+    """
     Calculates kurtosis of a single stock.
 
     Parameters
@@ -204,7 +204,7 @@ def KURTOSIS(prices, n=10):
 
     >>>KURTOSIS(df['SPY_Closes'], n=10)
     -1.0539330782600977
-    '''
+    """
     if n <= 3:
         raise ValueError('Kurtosis Length must be greater than 3')
         return None
@@ -222,7 +222,7 @@ def KURTOSIS(prices, n=10):
         return 0
 
 def HistoricVolatility(prices, n=100):
-    '''
+    """
     Calculates all annualised volatility values of a given price set.
 
     Parameters
@@ -271,11 +271,11 @@ def HistoricVolatility(prices, n=100):
     2019-12-30    7.025943    14.528539
     2019-12-31    7.317238    13.302135
     [2516 rows x 2 columns]
-    '''
+    """
     return np.log(1 + prices.pct_change()).rolling(n).std() * sqrt(252) * 100
 
 def HighestHigh(prices, n=5):
-    '''
+    """
     Takes a time-series dataframe and checks whether the current value on
     each value in the time-series is the largest over the previous n rows.
 
@@ -342,11 +342,11 @@ def HighestHigh(prices, n=5):
     2019-12-27       False        False
     2019-12-30       False         True
     2019-12-31       False         True
-    '''
+    """
     return prices.rolling(n).max() == prices
 
 def TrueRangeCustom(Highs, Lows, Closes):
-    '''
+    """
     Similar to the TradeStation function. Only used in the process of
     calculating ADX values.
 
@@ -364,7 +364,7 @@ def TrueRangeCustom(Highs, Lows, Closes):
     TrueRange_df : pandas-dataframe
         Dataframe containing the custom made true-range values.
 
-    '''
+    """
     TrueRange_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
     pbar = tqdm(total=len(Closes.columns), position=0, desc='Calculating True Ranges')
     for stock in TrueRange_df.columns:
@@ -390,7 +390,7 @@ def TrueRangeCustom(Highs, Lows, Closes):
     return TrueRange_df
 
 def ADX(Highs, Lows, Closes, length=10):
-    '''
+    """
     Similar to Tradestation function. Uses the TrueRangeCustom function to
     calculate the ADX values for a time-series prices dataframe
 
@@ -411,7 +411,7 @@ def ADX(Highs, Lows, Closes, length=10):
         Time-series dataframe with the calculated ADX values. The first
         'length' values will be NaN.
 
-    '''
+    """
     TrueRange_df = TrueRange(Highs, Lows, Closes) # Was originally TrueRangeCustom, but am changing it to TrueRange to test
     SF = 1/length
     ADX_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
@@ -486,7 +486,7 @@ def ADX(Highs, Lows, Closes, length=10):
     return ADX_df
 
 def TrueHigh(Highs, Closes):
-    '''
+    """
     Calculates the true high values for time-series data of multiple stocks.
     The true high value is defined as yesterday's close if yesterday's close
     is greater than today's high, and is defined as today's high if today's
@@ -505,7 +505,7 @@ def TrueHigh(Highs, Closes):
         Time-series dataframe with the true high of each day for multiple
         stocks.
 
-    '''
+    """
     TH_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
     yesterday_closes = Closes.shift(1)
     TH_df[yesterday_closes > Highs] = yesterday_closes
@@ -513,7 +513,7 @@ def TrueHigh(Highs, Closes):
     return TH_df
 
 def TrueLow(Lows, Closes):
-    '''
+    """
     Calculates the true low values for time-series data of multiple stocks.
     The true low value is defined as yesterday's close if yesterday's close
     is less than today's low, and is defined as today's low if today's
@@ -532,7 +532,7 @@ def TrueLow(Lows, Closes):
         Time-series dataframe with the true low of each day for multiple
         stocks.
 
-    '''
+    """
     TL_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
     yesterday_closes = Closes.shift(1)
     TL_df[yesterday_closes < Lows] = yesterday_closes
@@ -540,7 +540,7 @@ def TrueLow(Lows, Closes):
     return TL_df
 
 def TrueRange(Highs, Lows, Closes):
-    '''
+    """
     Calculates the true range values for time-series data of multiple stocks.
     The true range value is defined as the differnece between the true high
     value and the true low value for each day.
@@ -560,13 +560,13 @@ def TrueRange(Highs, Lows, Closes):
         Time-series dataframe with the true range value of each day for
         multiple stocks.
 
-    '''
+    """
     True_Highs = TrueHigh(Highs, Closes)
     True_Lows = TrueLow(Lows, Closes)
     return True_Highs - True_Lows
 
 def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
-    '''
+    """
     Calculates the average true range values of a time-series dataframe.
 
     Parameters
@@ -619,7 +619,7 @@ def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
 
     >>>Not completed yet.
 
-    '''
+    """
     True_Ranges = TrueRange(Highs, Lows, Closes)
     if method == 'simple':
         Avg_True_Ranges = True_Ranges.rolling(length).mean()

@@ -17,7 +17,7 @@ from tqdm import tqdm
 import os
 
 class Orders:
-    '''
+    """
     Places orders of specified types of a stock.
 
     Parameters
@@ -47,11 +47,11 @@ class Orders:
     should illustrate how to use the function/class.
     >>>
 
-    '''
+    """
 
     def __init__(self, symbol, open_reason=None, close_reason=None,
                  compound=False, able_to_exceed=True, min_to_enter=10):
-        '''
+        """
         Initialising the placement of an order.
 
         Currently, you must have a file called data.py in the directory for the
@@ -70,7 +70,7 @@ class Orders:
         able_to_exceed : bool, optional
             If set to True, this does not prevent spending more than your
             starting amount (or current wealth if compound is True).
-        '''
+        """
         self.symbol = symbol
         self.all_open_trade_rows = data.trade_df[(data.trade_df['symbol']==symbol) & (data.trade_df['close_price'].isnull())] # Extract open position for symbol
         self.current_number_of_shares = self.all_open_trade_rows['amount'].sum(axis=0)
@@ -87,7 +87,7 @@ class Orders:
             self.capital = data.wealth_track[-1]
 
     def order_amount(self, amount, limit_price=None):
-        '''
+        """
         Places an order for a desired amount of shares. Would not recommend as
         it would be simpler to use order_target_amount. If a negative amount
         is entered, this will place a short trade.
@@ -103,7 +103,7 @@ class Orders:
         -------
         None. The function will update data.cash and also update data.trade_df
 
-        '''
+        """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
@@ -147,7 +147,7 @@ class Orders:
         return True
 
     def order_value(self, value, limit_price=None):
-        '''
+        """
         Places an order for a set value of shares.
 
         An order for a given stock is placed and added to data.trade_df. If a
@@ -173,7 +173,7 @@ class Orders:
         Places an order of $10000 shares of ABC. The trade list will be updated
         to represent this.
 
-        '''
+        """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
@@ -192,7 +192,7 @@ class Orders:
         return self.order_amount(amount) # Places an order for the calculated number of shares
 
     def order_percent(self, percent, limit_price=None):
-        '''
+        """
         Orders a percent of your starting cash.
 
         Places an order for a given percent of your starting cash. If compound
@@ -224,7 +224,7 @@ class Orders:
 
         Will place a short order 5% of your current wealth.
 
-        '''
+        """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
@@ -237,7 +237,7 @@ class Orders:
         return self.order_value(value)
 
     def order_target_amount(self, target_amount, limit_price=None):
-        '''
+        """
         Orders a number of shares of a stock.
 
         Will put an order in for a target amount of shares. If negative, will
@@ -270,7 +270,7 @@ class Orders:
 
         This will ensure you are short 100 shares of SPY if the limit price of
         $101.3 is hit on that day.
-        '''
+        """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
@@ -306,7 +306,7 @@ class Orders:
             return False
 
     def order_target_value(self, target_value, limit_price=None):
-        '''
+        """
         Orders a specified value of shares of a stock.
 
         Will put an order in for a target value of shares. If negative, will
@@ -340,7 +340,7 @@ class Orders:
         This will ensure you are short 100 shares of SPY if the limit price of
         $101.3 is hit on that day. The open_reason column in data.trade_df will
         say 'Entry 1' for this trade.
-        '''
+        """
 
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
@@ -356,7 +356,7 @@ class Orders:
         return self.order_target_amount(target_amount)
 
     def order_target_percent(self, target_percent, limit_price=None):
-        '''
+        """
         Will put an order in for a target percent of your portfolio. If
         negative, will place a short order.
 
@@ -389,7 +389,7 @@ class Orders:
         This will ensure you are short in SPY at a value as close to 10% of your
         current wealth if the limit price of $101.3 is hit on that day. The
         open_reason column in data.trade_df will say 'Entry 1' for this trade.
-        '''
+        """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
         if limit_price != None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
@@ -466,7 +466,7 @@ class Orders:
                         close_if_hit=True,
                         trade_number=None,
                         eod=False):
-        '''
+        """
         Checks to see if a stop loss of a stock is hit on this day.
 
         Parameters
@@ -494,7 +494,7 @@ class Orders:
         >>> Orders('SPY', close_reason='stop-loss').check_stop_loss(0.05)
         True (if the value of your positions in SPY drop by 5% in this day)
 
-        '''
+        """
         if eod:
             todays_close = data.daily_closes[self.symbol].loc[data.current_date]
             if trade_number == None:
@@ -587,7 +587,7 @@ def get_norgatedata(symbol_list,
                     start_when_all_are_in=True,
                     adjustment='TotalReturn',
                     progress_desc='Downloading Norgate Data'):
-    '''
+    """
     Downloads data from NorgateData.
 
     Creates dataframes of norgate data for the symbols provided. The dataframes
@@ -622,7 +622,7 @@ def get_norgatedata(symbol_list,
 
     Examples
     --------
-    '''
+    """
     all_dates = pd.date_range(start=start_date, end=end_date)
     if adjustment == 'TotalReturn':
         priceadjust = norgatedata.StockPriceAdjustmentType.TOTALRETURN
@@ -752,7 +752,7 @@ def get_csv_data(folder_path,
                  start_date=date(2000,1,1),
                  end_date=datetime.now().date(),
                  start_when_all_are_in=True):
-    '''Short summary.
+    """Short summary.
 
     Parameters
     ----------
@@ -772,7 +772,7 @@ def get_csv_data(folder_path,
     type
         Description of returned object.
 
-    '''
+    """
     all_files = {fname[:-4]: pd.read_csv(folder_path+'\\'+fname, index_col=0, parse_dates=True) for fname in os.listdir(folder_path)}
     if data_format == 'combined':
         for fname, daily_data in all_files.items():
@@ -792,7 +792,7 @@ def get_valid_dates(max_lookback=200,
                     rebalance='daily',
                     start_trading = None,
                     end_trading = None):
-    '''
+    """
     Generates a date list containing the dates you wish to trade on. Considers
     the NYSE trading calendar.
 
@@ -815,7 +815,7 @@ def get_valid_dates(max_lookback=200,
         A list containing all valid dates that can be traded on at the desired
         rebalance frequency.
 
-    '''
+    """
     all_dates = data.all_dates[max_lookback:]
 
     if start_trading != None:
@@ -857,7 +857,7 @@ def get_valid_dates(max_lookback=200,
     return new_date_list
 
 def initialise():
-    '''
+    """
     Resets all variables before beginning a new backtest.
 
     Sets data.start_date to the first tradeable data based on data.daily_closes
@@ -878,7 +878,7 @@ def initialise():
     -------
     None.
 
-    '''
+    """
     data.start_date = data.all_dates[0]
     data.positions_tracker = pd.DataFrame(index=data.daily_closes.index, columns=data.daily_closes.columns)
     data.current_date = data.start_date
@@ -898,7 +898,7 @@ def initialise():
     data.trade_df = pd.DataFrame(columns=columns)
 
 def update():
-    '''
+    """
     Call this function at the end of each day of the backtest to calculate the
     current equity of that day.
 
@@ -906,7 +906,7 @@ def update():
     -------
     None.
 
-    '''
+    """
     total_wealth = data.cash
     all_open_trade_rows = data.trade_df[data.trade_df['close_price'].isnull()]
     current_position_value = 0
@@ -931,7 +931,7 @@ def plot_results(benchmark=None,
                  title=None,
                  date_format='%d/%m/%Y',
                  equity_label='OpenEquity'):
-    '''
+    """
     Produces a plotly plot that automatically opens in the default browser.
 
     Parameters
@@ -951,7 +951,7 @@ def plot_results(benchmark=None,
     Look in to the ability to plot drawdown and other useful plots. Look at
     tradestation for various useful graphs.
 
-    '''
+    """
     wealth_list = [x - 100000 for x in data.wealth_track]
     equity_df = pd.DataFrame(columns=['date', 'equity'])
     equity_df['date'] = data.date_track

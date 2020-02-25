@@ -55,6 +55,7 @@ def create_variable_combinations(list_of_series):
     data.optimisation_wealth_tracks = []
     data.length_of_backtest = 0
 
+
 def record_backtest(combination_row):
     """
     Called at the end of every backtest record the results in
@@ -75,13 +76,13 @@ def record_backtest(combination_row):
     data.optimisation_wealth_tracks.append(wealth_track_df)
     if data.length_of_backtest == 0:
         data.length_of_backtest = len(data.wealth_track) / 252
-    profit_as_percent = 100*(total_profit / data.starting_amount)
+    profit_as_percent = 100 * (total_profit / data.starting_amount)
     realised_rate = profit_as_percent / data.length_of_backtest
-
 
     data.optimisation_report.loc[combination_row] = data.combination_df.iloc[combination_row]
     data.optimisation_report.at[combination_row, 'total_profit'] = total_profit
     data.optimisation_report.at[combination_row, 'realised_rate'] = realised_rate
+
 
 def plot_tests(test_numbers, title=None):
     """
@@ -120,6 +121,7 @@ def plot_tests(test_numbers, title=None):
     fig.update_layout(template='plotly_dark', title=title)
     plot(fig, auto_open=True)
 
+
 def average_per_parameter(results):
     """
     Get the average profit over all optimsations for each parameter variation.
@@ -148,7 +150,7 @@ def average_per_parameter(results):
     for param in data.combination_df.columns:
         variations = results[param].value_counts().index
         for val in variations:
-            average = results[results[param]==val]['total_profit'].mean()
+            average = results[results[param] == val]['total_profit'].mean()
             index_label = str(param) + ' = ' + str(val)
             averages_df.at[index_label, 'average'] = average
     return averages_df

@@ -14,34 +14,26 @@ from _TechnicalIndicators import *
 import data
 from tqdm import tqdm
 
-class Run_Backtest:
 
-    def __init__(self, data, indicators, trade_open, trade_close):
-        self.indicators = indicators
-        self.trade_open = trade_open
-        self.trade_close = trade_close
-
-
-
-def run_single_backtest(stock_data, # Either a universe or a list of stock
-                        before_backtest_start, # A function to be run before the backtest begins
-                        trade_open, # A function containing rules to trade at the open
-                        trade_close, # A function containing rules to trade at close
-                        data_fields=['Open','High','Low','Close'],
+def run_single_backtest(stock_data,  # Either a universe or a list of stock
+                        before_backtest_start,  # A function to be run before the backtest begins
+                        trade_open,  # A function containing rules to trade at the open
+                        trade_close,  # A function containing rules to trade at close
+                        data_fields=['Open', 'High', 'Low', 'Close'],
                         data_adjustment='TotalReturn',
-                        parameters = {}, # I don't think this is needed for a single backtest
-                        indicators={}, # A dictionary containg a string of the function name from _Technical indicators as the key, and the inputs as the value in a list
-                        rebalance='daily', # To be selected from drop-down menu
+                        parameters={},  # I don't think this is needed for a single backtest
+                        indicators={},  # A dictionary containg a string of the function name from _Technical
+                        # indicators as the key, and the inputs as the value in a list
+                        rebalance='daily',  # To be selected from drop-down menu
                         max_lookback=200,
                         starting_cash=100000,
-                        data_source='Norgate', # To be selected from drop-down
-                        start_date=date(2000,1,1),
+                        data_source='Norgate',  # To be selected from drop-down
+                        start_date=date(2000, 1, 1),
                         end_date=datetime.now().date()):
-
     data.starting_amount = starting_cash
 
     if type(stock_data) == list:
-        data_start = start_date - pd.tseries.offsets.BDay(max_lookback+10) # +10 to be on the safe side.
+        data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)  # +10 to be on the safe side.
         get_norgatedata(stock_data,
                         fields=data_fields,
                         start_date=data_start,
@@ -56,7 +48,7 @@ def run_single_backtest(stock_data, # Either a universe or a list of stock
                                     start_trading=start_date,
                                     end_trading=end_date)
     indicator_variables = []
-    for indicator, params in indicators.items(): # Here I create the indicator variable names.
+    for indicator, params in indicators.items():  # Here I create the indicator variable names.
         var_name = indicator.lower()
         for param in params:
             var_name += '_' + str(param)

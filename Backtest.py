@@ -61,19 +61,20 @@ class Orders:
         Parameters
         ----------
         symbol : str
-            The acronymn for a ticker symbol of a stock.
+            The acronym for a ticker symbol of a stock.
         open_reason : str
             A label to put on the trade df for the reason the trade opened.
         close_reason : str
             A label to put on the trade df for the reason the trade closed.
         compound : bool, optional
-            True if you want to compund invest. The default is False.
+            True if you want to compound invest. The default is False.
         able_to_exceed : bool, optional
             If set to True, this does not prevent spending more than your
             starting amount (or current wealth if compound is True).
         """
         self.symbol = symbol
-        self.all_open_trade_rows = data.trade_df[(data.trade_df['symbol']==symbol) & (data.trade_df['close_price'].isnull())] # Extract open position for symbol
+        self.all_open_trade_rows = data.trade_df[(data.trade_df['symbol'] == symbol) & (
+            data.trade_df['close_price'].isnull())]  # Extract open position for symbol
         self.current_number_of_shares = self.all_open_trade_rows['amount'].sum(axis=0)
         self.date = data.current_date
         self.limit_passed = False
@@ -105,26 +106,28 @@ class Orders:
         None. The function will update data.cash and also update data.trade_df
 
         """
-        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
-        if limit_price != None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
+        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
+        # has been placed
+        if limit_price is not None and not self.limit_passed:
+            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+                data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
             else:
                 return False
 
         value_of_order = amount * self.price
-        value_space = data.starting_amount - data.value_invested # This is used only if self.able_to_exceed == False
+        value_space = data.starting_amount - data.value_invested  # This is used only if self.able_to_exceed == False
 
         if amount > 0:
             type_of_order = 'long'
             if not self.able_to_exceed and value_of_order > value_space:
-                amount = floor(value_space/self.price) # Recalculates the amount to place an order for
+                amount = floor(value_space / self.price)  # Recalculates the amount to place an order for
                 value_of_order = amount * self.price
         elif amount < 0:
             type_of_order = 'short'
             if not self.able_to_exceed and abs(value_of_order) > value_space:
-                amount = ceil(-value_space/self.price) # Recalculates the amount to place an order for
+                amount = ceil(-value_space / self.price)  # Recalculates the amount to place an order for
                 value_of_order = amount * self.price
         if -10 <= amount <= 10:
             return False
@@ -138,12 +141,15 @@ class Orders:
             'amount': amount,
             'open_reason': self.open_reason,
             'close_reason': self.close_reason},
-        ignore_index=True) # Updating the trade dataframe for the new order
+            ignore_index=True)  # Updating the trade dataframe for the new order
 
-        data.positions_tracker.at[data.current_date, self.symbol] = self.current_number_of_shares + amount # Adding the number of shares held of this position on this day
-        data.current_positions.add(self.symbol) # NOTE: This will not work if you are using a non-target function to sell shares!
-        data.cash -= abs(value_of_order) # Removing the value of the order from our cash. Notice it does not add anything in for short orders
-        data.value_invested += abs(value_of_order) # Increasing the value of our total open positions
+        data.positions_tracker.at[
+            data.current_date, self.symbol] = self.current_number_of_shares + amount
+        data.current_positions.add(
+            self.symbol)  # NOTE: This will not work if you are using a non-target function to sell shares!
+        data.cash -= abs(
+            value_of_order)
+        data.value_invested += abs(value_of_order)  # Increasing the value of our total open positions
 
         return True
 
@@ -175,9 +181,11 @@ class Orders:
         to represent this.
 
         """
-        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
-        if limit_price != None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
+        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
+        # has been placed
+        if limit_price is not None and not self.limit_passed:
+            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+                data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
             else:
@@ -185,12 +193,12 @@ class Orders:
         # Below we calculate the number of shares to purchase based on the vlaue of the order
         # Note that these calculations ensure that the order will not exceed the value
         if value > 0:
-            amount = floor(value/self.price)
+            amount = floor(value / self.price)
         elif value < 0:
-            amount = ceil(value/self.price)
+            amount = ceil(value / self.price)
         else:
             return False
-        return self.order_amount(amount) # Places an order for the calculated number of shares
+        return self.order_amount(amount)  # Places an order for the calculated number of shares
 
     def order_percent(self, percent, limit_price=None):
         """
@@ -226,15 +234,17 @@ class Orders:
         Will place a short order 5% of your current wealth.
 
         """
-        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
-        if limit_price != None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
+        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
+        # has been placed
+        if limit_price is not None and not self.limit_passed:
+            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+                data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
             else:
                 return False
         # Note below that self.capital will be the starting amount if self.compound == False
-        value = percent * self.capital # Calclulating the value of the order based on the percent
+        value = percent * self.capital  # Calculating the value of the order based on the percent
         return self.order_value(value)
 
     def order_target_amount(self, target_amount, limit_price=None):
@@ -272,20 +282,23 @@ class Orders:
         This will ensure you are short 100 shares of SPY if the limit price of
         $101.3 is hit on that day.
         """
-        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
-        if limit_price != None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
+        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
+        # has been placed
+        if limit_price is not None and not self.limit_passed:
+            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+                data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
             else:
                 return False
-        if (target_amount > self.current_number_of_shares >= 0) or (target_amount < self.current_number_of_shares <= 0): # Either going more long or more short
+        if (target_amount > self.current_number_of_shares >= 0) or (
+                target_amount < self.current_number_of_shares <= 0):  # Either going more long or more short
             amount_to_order = target_amount - self.current_number_of_shares
             if abs(amount_to_order) < self.min_to_enter:
                 return False
             else:
                 return self.order_amount(amount_to_order)
-        elif self.current_number_of_shares > target_amount >= 0 or self.current_number_of_shares < target_amount <= 0: # Remaining long/short but closing some shares
+        elif self.current_number_of_shares > target_amount >= 0 or self.current_number_of_shares < target_amount <= 0:
             amount_to_close = self.current_number_of_shares - target_amount
             amount_left = self.current_number_of_shares - amount_to_close
             data.positions_tracker.at[data.current_date, self.symbol] = amount_left
@@ -343,17 +356,19 @@ class Orders:
         say 'Entry 1' for this trade.
         """
 
-        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
-        if limit_price != None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
+        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
+        # has been placed
+        if limit_price is not None and not self.limit_passed:
+            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+                data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
             else:
                 return False
         if target_value >= 0:
-            target_amount = floor(target_value/self.price)
+            target_amount = floor(target_value / self.price)
         elif target_value < 0:
-            target_amount = ceil(target_value/self.price)
+            target_amount = ceil(target_value / self.price)
         return self.order_target_amount(target_amount)
 
     def order_target_percent(self, target_percent, limit_price=None):
@@ -391,9 +406,11 @@ class Orders:
         current wealth if the limit price of $101.3 is hit on that day. The
         open_reason column in data.trade_df will say 'Entry 1' for this trade.
         """
-        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order has been placed
-        if limit_price != None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[data.current_date]:
+        # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
+        # has been placed
+        if limit_price is not None and not self.limit_passed:
+            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+                data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
             else:
@@ -450,7 +467,6 @@ class Orders:
         data.cash += profit + abs(new_open_value)
         data.value_invested -= abs(new_open_value)
 
-
         data.trade_df = data.trade_df.append({
             'long_or_short': row_to_close['long_or_short'],
             'symbol': row_to_close['symbol'],
@@ -459,7 +475,7 @@ class Orders:
             'amount': amount_remaining,
             'open_value': row_to_close['open_price'] * amount_remaining,
             'open_reason': row_to_close['open_reason']
-            },
+        },
             ignore_index=True)
 
     def check_stop_loss(self,
@@ -498,7 +514,7 @@ class Orders:
         """
         if eod:
             todays_close = data.daily_closes[self.symbol].loc[data.current_date]
-            if trade_number == None:
+            if trade_number is None:
                 entry_value = self.all_open_trade_rows['open_value'].sum()
                 eod_value = self.current_number_of_shares * todays_close
                 if self.all_open_trade_rows['long_or_short'].iloc[0] == 'long':
@@ -531,7 +547,7 @@ class Orders:
         else:
             todays_low = data.daily_lows[self.symbol].loc[data.current_date]
             todays_high = data.daily_highs[self.symbol].loc[data.current_date]
-            if trade_number == None:
+            if trade_number is None:
                 entry_value = self.all_open_trade_rows['open_value'].sum()
                 # stop_value = (1 - stop_loss_percent) * entry_value
                 if self.all_open_trade_rows['long_or_short'].iloc[0] == 'long':
@@ -541,7 +557,7 @@ class Orders:
                     min_value_today = self.current_number_of_shares * todays_high
                     stop_value = (1 + stop_loss_percent) * entry_value
 
-                if min_value_today < stop_value: # Same for long or short
+                if min_value_today < stop_value:  # Same for long or short
                     # print('Exit all')
                     stop_price = stop_value / self.current_number_of_shares
                     if todays_low < stop_price < todays_high:
@@ -579,13 +595,12 @@ class Orders:
                     return False
 
 
-
-
 def get_norgatedata(symbol_list,
-                    start_date=date(2000,1,1),
+                    start_date=date(2000, 1, 1),
                     end_date=datetime.now().date(),
                     fields=['Close'],
                     start_when_all_are_in=True,
+                    forward_fill_prices=True,
                     adjustment='TotalReturn',
                     progress_desc='Downloading Norgate Data'):
     """
@@ -659,13 +674,13 @@ def get_norgatedata(symbol_list,
     pbar = tqdm(total=len(symbol_list), position=0, desc=progress_desc)
     for symbol in symbol_list:
         pricedata_dataframe = norgatedata.price_timeseries(
-        symbol,
-        stock_price_adjustment_setting = priceadjust,
-        padding_setting = padding_setting,
-        start_date = start_date,
-        end_date = end_date,
-        format=timeseriesformat,
-        fields=fields
+            symbol,
+            stock_price_adjustment_setting=priceadjust,
+            padding_setting=padding_setting,
+            start_date=start_date,
+            end_date=end_date,
+            format=timeseriesformat,
+            fields=fields
         )
         if need_close:
             daily_closes[symbol] = pricedata_dataframe['Close']
@@ -686,49 +701,57 @@ def get_norgatedata(symbol_list,
 
     if need_close:
         daily_closes = daily_closes.dropna(how='all')
-        daily_closes = daily_closes.fillna(method='ffill') + (daily_closes.fillna(method='bfill') * 0)
+        if forward_fill_prices:
+            daily_closes = daily_closes.fillna(method='ffill') + (daily_closes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_closes = daily_closes.dropna(how='any')
         data.daily_closes = daily_closes
 
     if need_open:
         daily_opens = daily_opens.dropna(how='all')
-        daily_opens = daily_opens.fillna(method='ffill') + (daily_opens.fillna(method='bfill') * 0)
+        if forward_fill_prices:
+            daily_opens = daily_opens.fillna(method='ffill') + (daily_opens.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_opens = daily_opens.dropna(how='any')
         data.daily_opens = daily_opens
 
     if need_high:
         daily_highs = daily_highs.dropna(how='all')
-        daily_highs = daily_highs.fillna(method='ffill') + (daily_highs.fillna(method='bfill') * 0)
+        if forward_fill_prices:
+            daily_highs = daily_highs.fillna(method='ffill') + (daily_highs.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_highs = daily_highs.dropna(how='any')
         data.daily_highs = daily_highs
 
     if need_low:
         daily_lows = daily_lows.dropna(how='all')
-        daily_lows = daily_lows.fillna(method='ffill') + (daily_lows.fillna(method='bfill') * 0)
+        if forward_fill_prices:
+            daily_lows = daily_lows.fillna(method='ffill') + (daily_lows.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_lows = daily_lows.dropna(how='any')
         data.daily_lows = daily_lows
 
     if need_volume:
         daily_volumes = daily_volumes.dropna(how='all')
-        daily_volumes = daily_volumes.fillna(method='ffill') + (daily_volumes.fillna(method='bfill') * 0)
+        if forward_fill_prices:
+            daily_volumes = daily_volumes.fillna(method='ffill') + (daily_volumes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_volumes = daily_volumes.dropna(how='any')
         data.daily_volumes = daily_volumes
 
     if need_turnover:
         daily_turnovers = daily_turnovers.dropna(how='all')
-        daily_turnovers = daily_turnovers.fillna(method='ffill') + (daily_turnovers.fillna(method='bfill') * 0)
+        if forward_fill_prices:
+            daily_turnovers = daily_turnovers.fillna(method='ffill') + (daily_turnovers.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_turnovers = daily_turnovers.dropna(how='any')
         data.daily_turnovers = daily_turnovers
 
     if need_unadjustedclose:
         daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='all')
-        daily_unadjustedcloses = daily_unadjustedcloses.fillna(method='ffill') + (daily_unadjustedcloses.fillna(method='bfill') * 0)
+        if forward_fill_prices:
+            daily_unadjustedcloses = daily_unadjustedcloses.fillna(method='ffill') + (
+                    daily_unadjustedcloses.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='any')
         data.daily_unadjustedcloses = daily_unadjustedcloses
@@ -748,9 +771,10 @@ def get_norgatedata(symbol_list,
     else:
         print('The error occured because no OHL or C was selected')
 
+
 def get_csv_data(folder_path,
                  data_format='combined',
-                 start_date=date(2000,1,1),
+                 start_date=date(2000, 1, 1),
                  end_date=datetime.now().date(),
                  start_when_all_are_in=True):
     """Short summary.
@@ -774,7 +798,8 @@ def get_csv_data(folder_path,
         Description of returned object.
 
     """
-    all_files = {fname[:-4]: pd.read_csv(folder_path+'\\'+fname, index_col=0, parse_dates=True) for fname in os.listdir(folder_path)}
+    all_files = {fname[:-4]: pd.read_csv(folder_path + '\\' + fname, index_col=0, parse_dates=True) for fname in
+                 os.listdir(folder_path)}
     if data_format == 'combined':
         for fname, daily_data in all_files.items():
             daily_data = daily_data.loc[start_date:end_date]
@@ -791,8 +816,8 @@ def get_csv_data(folder_path,
 
 def get_valid_dates(max_lookback=200,
                     rebalance='daily',
-                    start_trading = None,
-                    end_trading = None):
+                    start_trading=None,
+                    end_trading=None):
     """
     Generates a date list containing the dates you wish to trade on. Considers
     the NYSE trading calendar.
@@ -819,11 +844,11 @@ def get_valid_dates(max_lookback=200,
     """
     all_dates = data.all_dates[max_lookback:]
 
-    if start_trading != None:
+    if start_trading is not None:
         start = start_trading
     else:
         start = all_dates[0]
-    if end_trading != None:
+    if end_trading is not None:
         end = end_trading
     else:
         end = all_dates[-1]
@@ -851,11 +876,12 @@ def get_valid_dates(max_lookback=200,
             new_date -= timedelta(days=1)
         new_date_list.append(new_date)
 
-    if end_trading != None:
+    if end_trading is not None:
         final_index = data.all_dates.get_loc(new_date_list[-1])
         data.all_dates = data.all_dates[:final_index]
 
     return new_date_list
+
 
 def initialise():
     """
@@ -888,15 +914,16 @@ def initialise():
     data.wealth_track = []
     data.date_track = []
     data.current_positions = set()
-    #data.starting_amount = 100000
+    # data.starting_amount = 100000
     data.cash = data.starting_amount
     data.wealth = data.starting_amount
     data.value_invested = 0
 
     columns = ['long_or_short', 'symbol', 'open_date', 'open_price', 'amount',
-               'open_value','open_reason', 'close_date', 'close_price',
+               'open_value', 'open_reason', 'close_date', 'close_price',
                'close_value', 'close_reason', 'profit']
     data.trade_df = pd.DataFrame(columns=columns)
+
 
 def update():
     """
@@ -921,13 +948,13 @@ def update():
     data.wealth_track.append(total_wealth)
     data.date_track.append(data.current_date)
     if data.optimising:
-        all_closed_rows = data.trade_df[data.trade_df['close_price'].isnull()==False]
+        all_closed_rows = data.trade_df[data.trade_df['close_price'].isnull() == False]
         data.trade_df.drop(all_closed_rows.index, inplace=True)
         data.trade_df.reset_index(drop=True, inplace=True)
 
 
 def plot_results(benchmark=None,
-                 start_date=date(2000,1,3),
+                 start_date=date(2000, 1, 3),
                  end_date=datetime.now().date(),
                  title=None,
                  date_format='%d/%m/%Y',
@@ -962,7 +989,7 @@ def plot_results(benchmark=None,
     equity_df['equity'] = equity_df['equity'] - equity_df['equity'].iloc[0]
 
     fig = go.Figure([go.Scatter(x=equity_df.index, y=equity_df['equity'], name='My Strategy')])
-    if benchmark != None:
+    if benchmark is not None:
         comparison_DW = pd.read_csv(benchmark, index_col=0)
         comparison_DW.index = pd.to_datetime(comparison_DW.index, format=date_format)
         comparison_DW = comparison_DW.loc[start_date:end_date]

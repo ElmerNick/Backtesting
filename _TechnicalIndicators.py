@@ -152,6 +152,7 @@ def SKEW(prices, n=10):
         y = n / ((n-1) * (n-2))
     return y * s
 
+
 def KURTOSIS(prices, n=10):
     """
     Calculates kurtosis of a single stock.
@@ -207,7 +208,6 @@ def KURTOSIS(prices, n=10):
     """
     if n <= 3:
         raise ValueError('Kurtosis Length must be greater than 3')
-        return None
     prices = prices[-n:]
     m = prices.mean()
     sdev = prices.std()
@@ -216,10 +216,11 @@ def KURTOSIS(prices, n=10):
         for value1 in range(n):
             p2 += ((prices.iloc[-value1] - m) / sdev)**4
         p1 = n * (n+1) / ((n-1) * (n-2) * (n-3))
-        p3 = 3 * ((n-1))**2 / ((n-2) * (n-3))
+        p3 = 3 * (n - 1) ** 2 / ((n - 2) * (n - 3))
         return p1 * p2 - p3
     else:
         return 0
+
 
 def HistoricVolatility(prices, n=100):
     """
@@ -273,6 +274,7 @@ def HistoricVolatility(prices, n=100):
     [2516 rows x 2 columns]
     """
     return np.log(1 + prices.pct_change()).rolling(n).std() * sqrt(252) * 100
+
 
 def HighestHigh(prices, n=5):
     """
@@ -345,6 +347,7 @@ def HighestHigh(prices, n=5):
     """
     return prices.rolling(n).max() == prices
 
+
 def TrueRangeCustom(Highs, Lows, Closes):
     """
     Similar to the TradeStation function. Only used in the process of
@@ -388,6 +391,7 @@ def TrueRangeCustom(Highs, Lows, Closes):
         pbar.update(1)
     pbar.close()
     return TrueRange_df
+
 
 def ADX(Highs, Lows, Closes, length=10):
     """
@@ -485,6 +489,7 @@ def ADX(Highs, Lows, Closes, length=10):
     pbar.close()
     return ADX_df
 
+
 def TrueHigh(Highs, Closes):
     """
     Calculates the true high values for time-series data of multiple stocks.
@@ -511,6 +516,7 @@ def TrueHigh(Highs, Closes):
     TH_df[yesterday_closes > Highs] = yesterday_closes
     TH_df[yesterday_closes <= Highs] = Highs
     return TH_df
+
 
 def TrueLow(Lows, Closes):
     """
@@ -539,6 +545,7 @@ def TrueLow(Lows, Closes):
     TL_df[yesterday_closes >= Lows] = Lows
     return TL_df
 
+
 def TrueRange(Highs, Lows, Closes):
     """
     Calculates the true range values for time-series data of multiple stocks.
@@ -564,6 +571,7 @@ def TrueRange(Highs, Lows, Closes):
     True_Highs = TrueHigh(Highs, Closes)
     True_Lows = TrueLow(Lows, Closes)
     return True_Highs - True_Lows
+
 
 def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
     """
@@ -625,4 +633,6 @@ def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
         Avg_True_Ranges = True_Ranges.rolling(length).mean()
     elif method == 'wilders':
         Avg_True_Ranges = True_Ranges.ewm(alpha=1/length, min_periods=length).mean()
+    else:
+        raise ValueError('method must either be simple or wilders')
     return Avg_True_Ranges

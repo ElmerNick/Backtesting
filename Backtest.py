@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 import os
 
+
 class Orders:
     """
     Places orders of specified types of a stock.
@@ -81,7 +82,7 @@ class Orders:
         self.able_to_exceed = able_to_exceed
         self.price = data.current_price[symbol]
         self.min_to_enter = min_to_enter
-        if compound == False:
+        if not compound:
             self.capital = data.starting_amount
         else:
             self.capital = data.wealth_track[-1]

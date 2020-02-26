@@ -22,9 +22,6 @@ def run_single_backtest(stock_data,  # Either a universe or a list of stock
                         trade_every_day_close,
                         data_fields=['Open', 'High', 'Low', 'Close'],
                         data_adjustment='TotalReturn',
-                        parameters={},  # I don't think this is needed for a single backtest
-                        indicators={},
-                        # A dictionary containg a string of the function name from _Technical indicators as the key, and the inputs as the value in a list
                         rebalance='daily',  # To be selected from drop-down menu
                         max_lookback=200,
                         starting_cash=100000,

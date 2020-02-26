@@ -22,9 +22,6 @@ def run_optimisation(stock_data,  # Either a universe or a list of stock
                      opt_params={},
                      data_fields=['Open', 'High', 'Low', 'Close'],
                      data_adjustment='TotalReturn',
-                     parameters={},  # I don't think this is needed for a single backtest
-                     indicators={},
-                     # A dictionary containg a string of the function name from _Technical indicators as the key, and the inputs as the value in a list
                      rebalance='daily',  # To be selected from drop-down menu
                      max_lookback=200,
                      starting_cash=100000,
@@ -33,7 +30,7 @@ def run_optimisation(stock_data,  # Either a universe or a list of stock
                      end_date=datetime.now().date()):
     data.starting_amount = starting_cash
     data.optimising = True
-    
+
     if data_source == 'Norgate':
         _download_norgate_data(stock_data,
                                start_date,
@@ -41,52 +38,52 @@ def run_optimisation(stock_data,  # Either a universe or a list of stock
                                max_lookback,
                                data_fields,
                                data_adjustment)
-    
+
     new_date_list = get_valid_dates(max_lookback=max_lookback,
                                     rebalance=rebalance,
                                     start_trading=start_date,
                                     end_trading=end_date)
-    
+
     Optimise.create_variable_combinations_dict(opt_params)
     number_of_rows = len(data.combination_df)
     print('Total number of tests:', number_of_rows)
-    
+
     for i in range(number_of_rows):
         for j in range(len(data.combination_df.columns)):
             variable = data.combination_df.columns[j]
             value = data.combination_df.iat[i, j]
             exec('user.{} = {}'.format(variable, value))
-        
+
         before_backtest_start(user, data)
         initialise()
         pbar = tqdm(total=len(data.all_dates), position=0, leave=True, desc='Test {}'.format(str(i+1)))
         for d in data.all_dates:
             data.current_date = d
-            
+
             if d in new_date_list:
                 data.current_price = data.daily_opens.loc[d]
                 trade_open(user, data)
                 data.current_price = data.daily_closes.loc[d]
                 trade_close(user, data)
-                
+
             data.current_price = data.daily_closes.loc[d]
             trade_every_day_close(user, data)
-            
+
             update()
             pbar.update(1)
         for x in list(data.current_positions):
             Orders(x, close_reason='End of backtest').order_target_amount(0)
-            
+
         Optimise.record_backtest(combination_row=i)
         data.optimisation_report.to_csv('{}\\temp.csv'.format(results_save_location),
                                         index=True, index_label='Test_Number')
         pbar.close()
-    
+
     data.optimisation_report.to_csv(
         '{}\\Results_{}.csv'.format(results_save_location, datetime.now().strftime('%d%m%y %H%M')),
         index=True, index_label='Test_Number')
-    
-    
+
+
 def _download_norgate_data(stock_data,
                            start_date,
                            end_date,

@@ -109,7 +109,7 @@ class Orders:
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
         if limit_price is not None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+            if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -184,7 +184,7 @@ class Orders:
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
         if limit_price is not None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+            if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -237,7 +237,7 @@ class Orders:
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
         if limit_price is not None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+            if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -285,7 +285,7 @@ class Orders:
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
         if limit_price is not None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+            if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -359,7 +359,7 @@ class Orders:
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
         if limit_price is not None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+            if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -409,7 +409,7 @@ class Orders:
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
         if limit_price is not None and not self.limit_passed:
-            if data.daily_lows[self.symbol].loc[data.current_date] < limit_price < data.daily_highs[self.symbol].loc[
+            if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -560,7 +560,7 @@ class Orders:
                 if min_value_today < stop_value:  # Same for long or short
                     # print('Exit all')
                     stop_price = stop_value / self.current_number_of_shares
-                    if todays_low < stop_price < todays_high:
+                    if todays_low <= stop_price <= todays_high:
                         exit_price = stop_price
                     else:
                         exit_price = data.daily_opens[self.symbol].loc[data.current_date]

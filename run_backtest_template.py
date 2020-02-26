@@ -84,6 +84,7 @@ def run_single_backtest(stock_data,  # Either a universe or a list of stock
             data.current_price = data.daily_closes.loc[d]
             trade_close(user, data)
 
+        data.current_price = data.daily_closes.loc[d]
         trade_every_day_close(user, data)
 
         update()
@@ -106,7 +107,8 @@ def _download_norgate_data(stock_data,
     symbols = set()
     for s in stock_data:
         if type(s) == tuple:
-            symbols = symbols.union(s)
+            for stock in s:
+                symbols.add(norgatedata.assetid(stock))
         elif s == 'Liquid_500':
             daily_universes = pd.read_csv(
                 r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_500_most_recent.csv',

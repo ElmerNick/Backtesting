@@ -15,6 +15,7 @@ import pandas_market_calendars as mcal
 from datetime import datetime, timedelta
 from tqdm import tqdm
 import os
+import Optimise
 
 
 class Orders:
@@ -611,7 +612,7 @@ def get_norgatedata(symbol_list,
 
     Parameters
     ----------
-    symbol_list : list
+    symbol_list : list, tuple, set
         A list containing all the symbols of data to be gathered.
     start_date : datetime, default date(2000,1,1)
         The start date you wish to get data from.
@@ -997,3 +998,241 @@ def plot_results(benchmark=None,
         fig.add_trace(go.Scatter(x=comparison_DW.index, y=comparison_DW[equity_label], name='Benchmark results'))
     fig.update_layout(template='plotly_dark', title=title)
     plot(fig, auto_open=True)
+
+
+def run(stock_data,
+        before_backtest_start,
+        trade_every_day_open,
+        trade_open,
+        trade_close,
+        trade_every_day_close,
+        opt_results_save_loc='',
+        opt_params=None,
+        data_fields=('Open', 'High', 'Low', 'Close'),
+        data_adjustment='TotalReturn',
+        rebalance='daily',
+        max_lookback=200,
+        starting_cash=100000,
+        data_source='Norgate',
+        start_date=date(2000, 1, 1),
+        end_date=datetime.now().date()):
+    """
+    The function used to run a backtest or exhaustive optimisation.
+
+    Call this function at the end of your code which contains five functions: before_backtest_start,
+    trade_every_day_open, trade_open, trade_close, and trade_every_day_close. These functions will be called at the
+    appropriate times for the backtest to take place. Advisable to calculate all indicator dataframes in
+    before_backtest_start, and store in `user`. These can then be called in the other functions.
+
+    Parameters
+    ----------
+    stock_data : set
+        A set containing all the data you wish to be downloaded. This can either be a tuple of individual stocks or a
+        universe of stocks where all relevent data will be downloaded into memory from Norgate.
+    before_backtest_start : function
+        The function containing all the logic you wish to happen before the first trading date.
+    trade_every_day_open : function
+        A function which is called every trading day at the open, regardless of what you select your reblance
+        frequency to be. If `rebalance` is 'daily', then there is no need to use this function. This is called before
+        trade_open.
+    trade_open : function
+        A function which will be called at the frequency defined by rebalance. At this point data.current price will be
+        the open price of all the stocks on data.current_date.
+    trade_close : function
+        A function which will be called at the frequency defined by rebalance. At this point data.current price will be
+        the close price of all the stocks on data.current_date.
+    trade_every_day_close : function
+        A function which is called every trading day at the close, regardless of what you select your reblance
+        frequency to be. If `rebalance` is 'daily', then there is no need to use this function. This is called after
+        trade_close.
+    opt_results_save_loc : str, default ''
+        The path to the directory you would like to save the optimisation report to. Will be unused if running a single
+        backtest.
+    opt_params : dict, default None
+        The parameters that need to be optimised. Put the name of the variable as the key and the value to be the tuple
+        of values that you wish to optimise over.
+    data_fields : tuple, default ('Open', 'High', 'Low', 'Close')
+        The fields needed for the backtest to take place. As a minimum you need 'Open' and 'Close'
+    data_adjustment : str, default 'TotalReturn'
+        The type of adjustment desired for the downloaded data.
+    rebalance : str, default 'daily'
+        The frequency that `trade_open` and `trade_close` will be called. This can either be 'daily', 'weekly',
+        'month-end' or 'month-start'.
+    max_lookback : int, default 200
+        The number of trading days prior to the start_date needed for the backtest.
+    starting_cash : int, default 100000
+        The amount of cash, in dollars ($), that you will begin the backtest with.
+    data_source : str, default 'Norgate'
+        The source which you wish to pull data from. Currently can only be 'Norgate' or 'local_csv'.
+    start_date : datetime, default date(2000, 1, 1)
+        The first date a trade will take place on is the first trading date available after `start_date`, subject to
+        `rebalance` and non-trading days.
+    end_date : datetime, default datetime.now().date() (The current date)
+        The last date a trade could take place on. No dates after this will be available for the backtest. All trades
+        that would be open on `end_date` are closed on `end_date`.
+
+    Returns
+    -------
+    If you are optimising:
+        data.optimisation_report : pandas-dataframe
+            The optimisation report from all the backtests. This will also be exported to the directory if provided.
+
+    If you are running a single backtest:
+        data.trade_df : A trade list of the backtest.
+        positions_track : A dataframe containing data about how many stocks were held of each stock on each date.
+        value_track : A dataframe containing data about the value of each position held on each day, including the
+                      the total value of all held positions.
+
+
+    Examples
+    -------
+    >>>Please see Nick for help
+
+    """
+    if opt_params is None:
+        opt_params = {}
+    data.starting_amount = starting_cash
+
+    if data_source == 'Norgate':
+        _run_download_data_norgate(stock_data,
+                                   start_date,
+                                   end_date,
+                                   max_lookback,
+                                   data_fields,
+                                   data_adjustment)
+    elif data_source == 'local_csv':
+        _run_import_local_csv(stock_data,
+                              start_date,
+                              end_date,
+                              max_lookback)
+    trading_dates = get_valid_dates(max_lookback=max_lookback,
+                                    rebalance=rebalance,
+                                    start_trading=start_date,
+                                    end_trading=end_date)
+    Optimise.create_variable_combinations_dict(opt_params)
+    number_of_rows = len(data.combination_df)
+    print('Total number of tests:', number_of_rows)
+
+    if number_of_rows == 1:
+        data.optimising = False
+    else:
+        data.optimising = True
+
+    for i in range(number_of_rows):
+        for j in range(len(data.combination_df.columns)):
+            variable = data.combination_df.columns[j]
+            value = data.combination_df.iat[i, j]
+            if variable[:5] == 'user.':
+                exec('{} = {}'.format(variable, value))
+            else:
+                exec('user.{} = {}'.format(variable, value))
+
+        before_backtest_start(user, data)
+        initialise()
+        pbar = tqdm(total=len(data.all_dates), desc='Test {}'.format(str(i + 1)), position=0, leave=True)
+        for d in data.all_dates:
+            data.current_date = d
+
+            data.current_price = data.daily_opens.loc[d]
+            trade_every_day_open(user, data)
+
+            if d in trading_dates:
+                trade_open(user, data)
+                data.current_price = data.daily_closes.loc[d]
+                trade_close(user, data)
+
+            data.current_price = data.daily_closes.loc[d]
+            trade_every_day_close(user, data)
+
+            update()
+            pbar.update(1)
+        for x in list(data.current_positions):
+            Orders(x, close_reason='End of Backtest').order_target_amount(0)
+
+        if data.optimising:
+            Optimise.record_backtest(combination_row=i)
+            if opt_results_save_loc != '':
+                data.optimisation_report.to_csv('{}\\temp.csv'.format(opt_results_save_loc),
+                                                index=True, index_label='Test_Number')
+        pbar.close()
+
+    if data.optimising:
+        if (opt_results_save_loc != ''):
+            data.optimisation_report.to_csv(
+                '{}\\Results_{}.csv'.format(opt_results_save_loc, datetime.now().strftime('%d%m%y %H%M')),
+                index=True, index_label='Test_Number')
+        return data.optimisation_report
+
+    else:
+        plot_results()
+        trade_list = data.trade_df
+        trade_list['close_date'] = pd.to_datetime(trade_list['close_date'])
+        trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
+        if data_source == 'Norgate':
+            trade_list['symbol'] = [norgatedata.symbol(asset_id) for asset_id in trade_list['symbol']]
+        positions_track = data.positions_tracker.fillna(method='ffill').dropna(how='all')
+        value_track = positions_track.mul(data.daily_closes)
+        value_track.loc[:,'Total'] = value_track.sum(axis=1)
+        return trade_list, positions_track, value_track
+
+
+def _run_download_data_norgate(stock_data,
+                               start_date,
+                               end_date,
+                               max_lookback,
+                               data_fields,
+                               data_adjustment):
+    data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)
+
+    symbols = set()
+    for s in stock_data:
+        if type(s) == tuple:
+            for stock in s:
+                symbols.add(norgatedata.assetid(stock))
+        elif s[:6] == 'Liquid':
+            if s == 'Liquid_500':
+                daily_universes = pd.read_csv(
+                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_500_most_recent.csv',
+                    index_col=0, parse_dates=True)
+            elif s == 'Liquid_1500':
+                daily_universes = pd.read_csv(
+                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_1500_most_recent.csv',
+                    index_col=0, parse_dates=True)
+            daily_universes = daily_universes.dropna(how='all')
+            daily_universes = daily_universes.loc[start_date:end_date]
+            daily_universes.dropna(axis=1, how='all', inplace=True)
+            daily_universes = daily_universes.astype(int)
+            unique_universes = daily_universes.drop_duplicates()
+            syms = set()
+            for col in unique_universes.columns:
+                syms = syms.union(unique_universes[col].unique())
+            data.daily_universes = daily_universes
+            symbols = symbols.union(syms)
+    get_norgatedata(symbols,
+                    fields=data_fields,
+                    start_date=data_start,
+                    end_date=end_date,
+                    start_when_all_are_in=False,
+                    adjustment=data_adjustment)
+
+
+def _run_import_local_csv(stock_data,
+                          start_date,
+                          end_date,
+                          max_lookback)
+    data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)
+
+    print('Before going further, ensure there are at least two files in the director you will provide\n\
+            daily_closes.csv and daily_opens.csv')
+
+    input('Paste the directory path to the daily data files: ')
+
+    all_files = {fname[:-4]: pd.read_csv(folder_path + '\\' + fname, index_col=0, parse_dates=True) for fname in
+                 os.listdir(folder_path)}
+
+    for fname, daily_data in all_files.items():
+        daily_data = daily_data.loc[data_start:end_date]
+        daily_data.dropna(how='all')
+        exec('data.{} = daily_data'.format(fname))
+
+    data.all_date = data.daily_closes.index

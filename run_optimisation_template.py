@@ -17,6 +17,7 @@ def run_optimisation(stock_data,  # Either a universe or a list of stock
                      before_backtest_start,  # A function to be run before the backtest begins
                      trade_open,  # A function containing rules to trade at the open
                      trade_close,  # A function containing rules to trade at close
+                     trade_every_day_open,
                      trade_every_day_close,
                      results_save_location,
                      opt_params={},
@@ -60,6 +61,9 @@ def run_optimisation(stock_data,  # Either a universe or a list of stock
         for d in data.all_dates:
             data.current_date = d
 
+            data.current_price = data.daily_opens.loc[d]
+            trade_every_day_open(user, data)
+
             if d in new_date_list:
                 data.current_price = data.daily_opens.loc[d]
                 trade_open(user, data)
@@ -75,13 +79,18 @@ def run_optimisation(stock_data,  # Either a universe or a list of stock
             Orders(x, close_reason='End of backtest').order_target_amount(0)
 
         Optimise.record_backtest(combination_row=i)
-        data.optimisation_report.to_csv('{}\\temp.csv'.format(results_save_location),
-                                        index=True, index_label='Test_Number')
+        if results_save_location != '':
+            data.optimisation_report.to_csv('{}\\temp.csv'.format(results_save_location),
+                                            index=True, index_label='Test_Number')
         pbar.close()
+    if results_save_location != '':
+        data.optimisation_report.to_csv(
+                '{}\\Results_{}.csv'.format(results_save_location, datetime.now().strftime('%d%m%y %H%M')),
+                index=True, index_label='Test_Number')
 
-    data.optimisation_report.to_csv(
-        '{}\\Results_{}.csv'.format(results_save_location, datetime.now().strftime('%d%m%y %H%M')),
-        index=True, index_label='Test_Number')
+    if number_of_rows == 1:
+        plot_results()
+
 
 
 def _download_norgate_data(stock_data,
@@ -98,10 +107,15 @@ def _download_norgate_data(stock_data,
         if type(s) == tuple:
             for stock in s:
                 symbols.add(norgatedata.assetid(stock))
-        elif s == 'Liquid_500':
-            daily_universes = pd.read_csv(
-                r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_500_most_recent.csv',
-                index_col=0, parse_dates=True)
+        elif s[:6] == 'Liquid':
+            if s == 'Liquid_500':
+                daily_universes = pd.read_csv(
+                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_500_most_recent.csv',
+                    index_col=0, parse_dates=True)
+            elif s == 'Liquid_1500':
+                daily_universes = pd.read_csv(
+                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_1500_most_recent.csv',
+                    index_col=0, parse_dates=True)
             daily_universes = daily_universes.dropna(how='all')
             daily_universes = daily_universes.loc[start_date:end_date]
             daily_universes.dropna(axis=1, how='all', inplace=True)

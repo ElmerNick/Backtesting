@@ -6,6 +6,7 @@ Created on Mon Jan 20 08:39:14 2020
 """
 import pandas as pd
 import data
+import user
 from datetime import date
 from math import floor, ceil
 import norgatedata
@@ -1219,13 +1220,13 @@ def _run_download_data_norgate(stock_data,
 def _run_import_local_csv(stock_data,
                           start_date,
                           end_date,
-                          max_lookback)
+                          max_lookback):
     data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)
 
     print('Before going further, ensure there are at least two files in the director you will provide\n\
             daily_closes.csv and daily_opens.csv')
 
-    input('Paste the directory path to the daily data files: ')
+    folder_path = input('Paste the directory path to the daily data files: ')
 
     all_files = {fname[:-4]: pd.read_csv(folder_path + '\\' + fname, index_col=0, parse_dates=True) for fname in
                  os.listdir(folder_path)}

@@ -12,10 +12,25 @@ from _TechnicalIndicators import RSI
 
 
 def before_backtest_start(user, data):
+    '''
+    In here, code up anything that you wish to happen before each backtest starts. A good habit to get in to is to
+    calculate all indicators here and then use them in the backtest. Any variables you wish to be accessible in the
+    other function you must input `user.` in front. For anything that will be optimised it MUST have `user.` as a
+    prefix.
+    '''
     return
 
 
+'''
+In each of the functions below, two useful variables have been provided. `d` is the timestamp for the current day of
+the backtest. `index_today` is the row number relating to this date in `data.daily_closes`. You can use `index_today`
+for creating history variables.
+'''
 def trade_every_day_open(user, data):
+    '''
+    This is run every day regardless of `rebalance` frequency. If you are on a day where `trade_open` will execute, this
+    function will run first.
+    '''
     d = data.current_date
     index_today = data.daily_closes.index.get_loc(d)
     return
@@ -34,37 +49,49 @@ def trade_close(user, data):
 
 
 def trade_every_day_close(user, data):
+    '''
+    Similar to `trade_every_day_open` but runs after `trade_close`.
+    '''
     d = data.current_date
     index_today = data.daily_closes.index.get_loc(d)
     return
 
 
+'''
+Input any equities or universes you wish to be included in the backtest. If a universe is chosen, the data for that will
+be stored in `data.daily_universes`.
+'''
 stock_data = {'Liquid_500', ('SPY',)}
 
-save_location_of_report = r''
+save_location_of_report = r''  # If optimising this will be where the optimisation report is saved.
+'''
+For optimisations, populate `params_to_optimise`. Write the name of the variable to optimise as the key, and the value
+of the dictionary to be a tuple of the optimised parameters. The program will run the optimisation on every possible
+combination of the parameters.
+'''
 params_to_optimise = {}
-data_fields_needed = ['Open', 'High', 'Low', 'Close']  # Want to make into check boxes
-data_adjustment = 'TotalReturn'  # Will be a radio button
-rebalance = 'daily'  # Will be either radio buttons or dropdown menu
-max_lookback = 200  # Integer input
-starting_cash = 100000  # 2 dp. float input
-data_source = 'Norgate'  # Dropdown menu
-start_date = date(2000, 1, 1)  # Date select
-end_date = date(2020, 2, 13)  # Date select
+data_fields_needed = ['Open', 'High', 'Low', 'Close']  # The fields needed. If `check_stop_loss` is used, need OHLC
+data_adjustment = 'TotalReturn'  # The type of adjustment of the data
+rebalance = 'daily'  # 'daily', 'weekly', 'month-end', 'month-start'
+max_lookback = 200
+starting_cash = 100000  # 2 dp. float
+data_source = 'Norgate'  # Either 'Norgate' or 'local_csv'
+start_date = date(2000, 1, 1)  # The date trading will start
+end_date = date(2020, 2, 13)  # The date trading will end
 
-run(stock_data=stock_data,
-    before_backtest_start=before_backtest_start,
-    trade_every_day_open=trade_every_day_open,
-    trade_open=trade_open,
-    trade_close=trade_close,
-    trade_every_day_close=trade_every_day_close,
-    opt_results_save_loc=save_location_of_report,
-    opt_params=params_to_optimise,
-    data_fields=data_fields_needed,
-    data_adjustment=data_adjustment,
-    rebalance=rebalance,
-    max_lookback=max_lookback,
-    starting_cash=starting_cash,
-    data_source='Norgate',
-    start_date=start_date,
-    end_date=end_date)
+results = run(stock_data=stock_data,
+              before_backtest_start=before_backtest_start,
+              trade_every_day_open=trade_every_day_open,
+              trade_open=trade_open,
+              trade_close=trade_close,
+              trade_every_day_close=trade_every_day_close,
+              opt_results_save_loc=save_location_of_report,
+              opt_params=params_to_optimise,
+              data_fields=data_fields_needed,
+              data_adjustment=data_adjustment,
+              rebalance=rebalance,
+              max_lookback=max_lookback,
+              starting_cash=starting_cash,
+              data_source='Norgate',
+              start_date=start_date,
+              end_date=end_date)

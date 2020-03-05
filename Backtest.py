@@ -601,7 +601,7 @@ def get_norgatedata(symbol_list,
                     start_date=date(2000, 1, 1),
                     end_date=datetime.now().date(),
                     fields=['Close'],
-                    start_when_all_are_in=True,
+                    start_when_all_are_in=False,
                     forward_fill_prices=True,
                     adjustment='TotalReturn',
                     progress_desc='Downloading Norgate Data'):
@@ -617,13 +617,13 @@ def get_norgatedata(symbol_list,
         A list containing all the symbols of data to be gathered.
     start_date : datetime, default date(2000,1,1)
         The start date you wish to get data from.
-    end_date : datetime, default date(2020,1,2)
+    end_date : datetime, default today
         The end date you wish to get data to.
     fields: list, default ['Close']
         A list of the fields you wish to download. Must contain any combination
         of {'Open', 'High', 'Low', 'Close', 'Volume', 'Turnover', 'Unadjusted
         Close'}.
-    start_when_all_are_in : bool, default True.
+    start_when_all_are_in : bool, default False.
         Determines whether or not to drop all dates that do not contain any
         data for the stocks. If set to True, will drop the dates that any
         stock is missing data.
@@ -826,11 +826,15 @@ def get_valid_dates(max_lookback=200,
 
     Parameters
     ----------
-    max_lookback : int, optional
-        The maximum lookback needed for your backtest. The default is 200.
+    max_lookback : int, default 200
+        The maximum lookback needed for your backtest.
     rebalance : {'daily', 'weekly', 'month-end', 'month-start'}, default 'daily'
         The frequency you wish to rebalance your portfolio. You have a choice
         of 'daily', 'weekly', 'month-end' or 'month-start'.
+    start_trading : datetime, default None
+        The date the first trade could happen.
+    end_trading : datetime, default None
+        The end of the backtest.
 
     Raises
     ------
@@ -966,15 +970,20 @@ def plot_results(benchmark=None,
 
     Parameters
     ----------
-    benchmark : str, default None
+    benchmark : str or list or dict or tuple, default None
         The file location of an equity series that can be plotted on the same
-        graph as the backtest result. Must have the column header 'equity'.
+        graph as the backtest result. For more benchmarks to be applied, write the file locations in a list or tuple. If
+        you wish to specify the name, use a dictionary where the value is the name of the strategy.
     start_date : datetime, default date(200,1,3)
         The start date of the plot.
     end_date : datetime, defaul date(2019,12,31)
         The end date of the plot.
     title : str, default None
         The title which will appear at the top of the plot.
+    date_format : str, default '%d/%m/%Y'
+        The format that the dates are in the benchmark data.
+    equity_label : str, default 'OpenEquity'
+        The column header of the equity column of the benchmark file provided.
 
     Notes
     -----
@@ -991,12 +1000,31 @@ def plot_results(benchmark=None,
     equity_df['equity'] = equity_df['equity'] - equity_df['equity'].iloc[0]
 
     fig = go.Figure([go.Scatter(x=equity_df.index, y=equity_df['equity'], name='My Strategy')])
-    if benchmark is not None:
+    if isinstance(benchmark, str):
         comparison_DW = pd.read_csv(benchmark, index_col=0)
         comparison_DW.index = pd.to_datetime(comparison_DW.index, format=date_format)
         comparison_DW = comparison_DW.loc[start_date:end_date]
         comparison_DW[equity_label] = comparison_DW[equity_label] - comparison_DW[equity_label].iloc[0]
         fig.add_trace(go.Scatter(x=comparison_DW.index, y=comparison_DW[equity_label], name='Benchmark results'))
+    elif isinstance(benchmark, (list, tuple)):
+        i = 1
+        for bench in benchmark:
+            comparison_DW = pd.read_csv(bench, index_col=0)
+            comparison_DW.index = pd.to_datetime(comparison_DW.index, format=date_format)
+            comparison_DW = comparison_DW.loc[start_date:end_date]
+            comparison_DW[equity_label] = comparison_DW[equity_label] - comparison_DW[equity_label].iloc[0]
+            fig.add_trace(go.Scatter(x=comparison_DW.index, y=comparison_DW[equity_label], name=f'Benchmark {i}'))
+            i += 1
+    elif isinstance(benchmark, dict):
+        i = 1
+        for bench, name in benchmark.items():
+            comparison_DW = pd.read_csv(bench, index_col=0)
+            comparison_DW.index = pd.to_datetime(comparison_DW.index, format=date_format)
+            comparison_DW = comparison_DW.loc[start_date:end_date]
+            comparison_DW[equity_label] = comparison_DW[equity_label] - comparison_DW[equity_label].iloc[0]
+            fig.add_trace(go.Scatter(x=comparison_DW.index, y=comparison_DW[equity_label], name=name))
+            i += 1
+
     fig.update_layout(template='plotly_dark', title=title)
     plot(fig, auto_open=True)
 
@@ -1158,14 +1186,15 @@ def run(stock_data,
         pbar.close()
 
     if data.optimising:
-        if (opt_results_save_loc != ''):
+        if opt_results_save_loc != '':
             data.optimisation_report.to_csv(
                 '{}\\Results_{}.csv'.format(opt_results_save_loc, datetime.now().strftime('%d%m%y %H%M')),
                 index=True, index_label='Test_Number')
         return data.optimisation_report
 
     else:
-        plot_results()
+        plot_results(start_date=start_date,
+                     end_date=end_date)
         trade_list = data.trade_df
         trade_list['close_date'] = pd.to_datetime(trade_list['close_date'])
         trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
@@ -1173,7 +1202,7 @@ def run(stock_data,
             trade_list['symbol'] = [norgatedata.symbol(asset_id) for asset_id in trade_list['symbol']]
         positions_track = data.positions_tracker.fillna(method='ffill').dropna(how='all')
         value_track = positions_track.mul(data.daily_closes)
-        value_track.loc[:,'Total'] = value_track.sum(axis=1)
+        value_track.loc[:, 'Total'] = value_track.sum(axis=1)
         return trade_list, positions_track, value_track
 
 

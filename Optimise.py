@@ -81,8 +81,6 @@ def create_variable_combinations_dict(param_dict):
     data.length_of_backtest = 0
 
 
-
-
 def record_backtest(combination_row):
     """
     Called at the end of every backtest record the results in

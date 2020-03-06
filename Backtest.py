@@ -1035,6 +1035,7 @@ def run(stock_data,
         trade_open,
         trade_close,
         trade_every_day_close,
+        after_backtest_finish,
         opt_results_save_loc='',
         opt_params=None,
         data_fields=('Open', 'High', 'Low', 'Close'),
@@ -1044,7 +1045,9 @@ def run(stock_data,
         starting_cash=100000,
         data_source='Norgate',
         start_date=date(2000, 1, 1),
-        end_date=datetime.now().date()):
+        end_date=datetime.now().date(),
+        auto_plot=True,
+        plot_title='Backtest'):
     """
     The function used to run a backtest or exhaustive optimisation.
 
@@ -1074,6 +1077,10 @@ def run(stock_data,
         A function which is called every trading day at the close, regardless of what you select your reblance
         frequency to be. If `rebalance` is 'daily', then there is no need to use this function. This is called after
         trade_close.
+    after_backtest_finish : function
+        A function that is called at the end of the backtest. Here you can record any extra desired data or make your
+        own adjustments to any of the results. It is also possible to use `Backtest.plot_results` to use the function
+        to its full potential.
     opt_results_save_loc : str, default ''
         The path to the directory you would like to save the optimisation report to. Will be unused if running a single
         backtest.
@@ -1099,6 +1106,11 @@ def run(stock_data,
     end_date : datetime, default datetime.now().date() (The current date)
         The last date a trade could take place on. No dates after this will be available for the backtest. All trades
         that would be open on `end_date` are closed on `end_date`.
+    auto_plot : bool, default True
+        Set to True if you would like a plot of the strategy to be automatically generated. A plot can also be generated
+        in the `after_backtest_finish` function.
+    plot_title : str, default 'Backtest'
+        The title for the plotly plot. This will only be used if `auto_plot` is set to True.
 
     Returns
     -------
@@ -1178,6 +1190,8 @@ def run(stock_data,
         for x in list(data.current_positions):
             Orders(x, close_reason='End of Backtest').order_target_amount(0)
 
+        after_backtest_finish(user, data)
+
         if data.optimising:
             Optimise.record_backtest(combination_row=i)
             if opt_results_save_loc != '':
@@ -1193,8 +1207,10 @@ def run(stock_data,
         return data.optimisation_report
 
     else:
-        plot_results(start_date=start_date,
-                     end_date=end_date)
+        if auto_plot:
+            plot_results(start_date=start_date,
+                         end_date=end_date,
+                         title=plot_title)
         trade_list = data.trade_df
         trade_list['close_date'] = pd.to_datetime(trade_list['close_date'])
         trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']

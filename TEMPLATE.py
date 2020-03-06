@@ -57,6 +57,14 @@ def trade_every_day_close(user, data):
     return
 
 
+def after_backtest_finish(user, data):
+    '''
+    This is run after each backtest finishes. If you are doing a single backtest, can use it to plot results or save
+    files. If optimising, be weary that this will run after each backtest in the optimisation.
+    '''
+    return
+
+
 '''
 Input any equities or universes you wish to be included in the backtest. If a universe is chosen, the data for that will
 be stored in `data.daily_universes`.
@@ -79,12 +87,13 @@ data_source = 'Norgate'  # Either 'Norgate' or 'local_csv'
 start_date = date(2000, 1, 1)  # The date trading will start
 end_date = date(2020, 2, 13)  # The date trading will end
 
-results = run(stock_data=stock_data,
+Results = run(stock_data=stock_data,
               before_backtest_start=before_backtest_start,
               trade_every_day_open=trade_every_day_open,
               trade_open=trade_open,
               trade_close=trade_close,
               trade_every_day_close=trade_every_day_close,
+              after_backtest_finish=after_backtest_finish,
               opt_results_save_loc=save_location_of_report,
               opt_params=params_to_optimise,
               data_fields=data_fields_needed,

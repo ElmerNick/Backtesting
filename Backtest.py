@@ -1030,6 +1030,7 @@ def plot_results(benchmark=None,
 
 
 def run(stock_data,
+        before_everything_starts,
         before_backtest_start,
         trade_every_day_open,
         trade_open,

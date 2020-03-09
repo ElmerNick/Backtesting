@@ -11,6 +11,15 @@ from datetime import date
 from _TechnicalIndicators import RSI
 
 
+def before_everything_starts(user, data):
+    '''
+    If you want anything run before any backtests start, then place it here. Any variables which will remain constant
+    throughtout an optimisation can be defined here. You can also initalise any custom metrics here and record them in
+    the functions below.
+    '''
+    return
+
+
 def before_backtest_start(user, data):
     '''
     In here, code up anything that you wish to happen before each backtest starts. A good habit to get in to is to

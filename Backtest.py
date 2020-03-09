@@ -1061,6 +1061,9 @@ def run(stock_data,
     stock_data : set
         A set containing all the data you wish to be downloaded. This can either be a tuple of individual stocks or a
         universe of stocks where all relevent data will be downloaded into memory from Norgate.
+    before_everything_starts : function
+        This function is run before the first test in an optimisation is run. Define any global variables which will
+        remain unchanged throughout the optimisation.
     before_backtest_start : function
         The function containing all the logic you wish to happen before the first trading date.
     trade_every_day_open : function
@@ -1158,6 +1161,8 @@ def run(stock_data,
         data.optimising = False
     else:
         data.optimising = True
+
+    before_everything_starts(user, data)
 
     for i in range(number_of_rows):
         for j in range(len(data.combination_df.columns)):

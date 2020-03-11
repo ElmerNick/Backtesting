@@ -108,9 +108,7 @@ def record_backtest(combination_row):
     data.optimisation_report.at[combination_row, 'total_profit'] = total_profit
     data.optimisation_report.at[combination_row, 'realised_rate'] = realised_rate
 
-    yearly_profits = wealth_track_df.resample('Y').last()
-    yearly_profits = yearly_profits[yearly_profits != data.starting_amount]
-    yearly_profits = yearly_profits.diff()
+    yearly_profits = wealth_track_df.resample('Y').last().diff()
     yearly_profits.index = yearly_profits.index.year
     yearly_profits *= 100 / data.starting_amount
     for year in yearly_profits.index:

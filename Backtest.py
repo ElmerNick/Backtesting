@@ -417,7 +417,7 @@ class Orders:
                 self.limit_passed = True
             else:
                 return False
-        target_value = (target_percent) * self.capital
+        target_value = target_percent * self.capital
         return self.order_target_value(target_value)
 
     def _fully_close_row(self, trade_number):
@@ -484,7 +484,8 @@ class Orders:
                         stop_loss_percent,
                         close_if_hit=True,
                         trade_number=None,
-                        eod=False):
+                        eod=False,
+                        sod=False):
         """
         Checks to see if a stop loss of a stock is hit on this day.
 
@@ -501,6 +502,8 @@ class Orders:
             If you wish to only check for a hit stop loss on close data.
             Otherwise the stop loss will be triggered if the price hits the stop
             loss at any time.
+        sod : bool, default False
+            If you wish to only check the stop loss at the start of each day then set this to True.
 
         Returns
         -------
@@ -545,7 +548,37 @@ class Orders:
                     return True
                 else:
                     return False
+        elif sod:
+            todays_open = data.daily_opens[self.symbol].loc[data.current_date]
+            if trade_number is None:
+                entry_value = self.all_open_trade_rows['open_value'].sum()
+                sod_value = self.current_number_of_shares * todays_open
+                if self.all_open_trade_rows['long_or_short'].iloc[0] == 'long':
+                    stop_value = (1 - stop_loss_percent) * entry_value
+                else:
+                    stop_value = (1 + stop_loss_percent) * entry_value
+                if sod_value < stop_value:
+                    if close_if_hit:
+                        self.order_target_amount(0)
+                    return True
+                else:
+                    return False
+            else:
+                trade_row = data.trade_df.loc[trade_number]
+                entry_value = trade_row['open_value']
+                number_of_shares = trade_row['amount']
+                eod_value = number_of_shares * todays_close
+                if trade_row['long_or_short'] == 'long':
+                    stop_value = (1 - stop_loss_percent) * entry_value
+                else:
+                    stop_value = (1 + stop_loss_percent) * entry_value
 
+                if eod_value < stop_value:
+                    if close_if_hit:
+                        self.fully_close_row(trade_number)
+                    return True
+                else:
+                    return False
         else:
             todays_low = data.daily_lows[self.symbol].loc[data.current_date]
             todays_high = data.daily_highs[self.symbol].loc[data.current_date]
@@ -627,6 +660,8 @@ def get_norgatedata(symbol_list,
         Determines whether or not to drop all dates that do not contain any
         data for the stocks. If set to True, will drop the dates that any
         stock is missing data.
+    forward_fill_prices : bool, default False
+        If the data has gaps in it, then these gaps will be forward filled.
     adjustment : {'TotalReturn', 'Capital', 'None'}, default 'TotalReturn'.
         The type of adjustment desired for the data.
     progress_desc : str, default 'Downloading Norgate Data'
@@ -785,7 +820,7 @@ def get_csv_data(folder_path,
     ----------
     folder_path : type
         Description of parameter `folder_path`.
-    format : type
+    data_format : type
         Description of parameter `format`.
     start_date : type
         Description of parameter `start_date`.
@@ -954,7 +989,7 @@ def update():
     data.wealth_track.append(total_wealth)
     data.date_track.append(data.current_date)
     if data.optimising:
-        all_closed_rows = data.trade_df[data.trade_df['close_price'].isnull() == False]
+        all_closed_rows = data.trade_df[~data.trade_df['close_price'].isnull()]
         data.trade_df.drop(all_closed_rows.index, inplace=True)
         data.trade_df.reset_index(drop=True, inplace=True)
 

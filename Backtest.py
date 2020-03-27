@@ -110,6 +110,9 @@ class Orders:
         """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
+        '''
+        ##### Section removed as I do not believe it was quite correct #####
+
         if limit_price is not None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
@@ -117,6 +120,20 @@ class Orders:
                 self.limit_passed = True
             else:
                 return False
+        '''
+
+        if limit_price is not None and not self.limit_passed:
+            if amount > 0 and self.price < limit_price:
+                self.limit_passed = True
+            elif amount < 0 and self.price > limit_price:
+                self.limit_passed = True
+            elif data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
+                data.current_date]:
+                self.price = limit_price
+                self.limit_passed = True
+            else:
+                return False
+
 
         value_of_order = amount * self.price
         value_space = data.starting_amount - data.value_invested  # This is used only if self.able_to_exceed == False
@@ -185,8 +202,24 @@ class Orders:
         """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
+        '''
+        ##### Section removed as I do not believe it was quite correct #####
+
         if limit_price is not None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
+                data.current_date]:
+                self.price = limit_price
+                self.limit_passed = True
+            else:
+                return False
+        '''
+
+        if limit_price is not None and not self.limit_passed:
+            if value > 0 and self.price < limit_price:
+                self.limit_passed = True
+            elif value < 0 and self.price > limit_price:
+                self.limit_passed = True
+            elif data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -238,8 +271,24 @@ class Orders:
         """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
+        '''
+        ##### Section removed as I do not believe it was quite correct #####
+
         if limit_price is not None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
+                data.current_date]:
+                self.price = limit_price
+                self.limit_passed = True
+            else:
+                return False
+        '''
+
+        if limit_price is not None and not self.limit_passed:
+            if percent > 0 and self.price < limit_price:
+                self.limit_passed = True
+            elif percent < 0 and self.price > limit_price:
+                self.limit_passed = True
+            elif data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
                 self.price = limit_price
                 self.limit_passed = True
@@ -286,6 +335,9 @@ class Orders:
         """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
+        '''
+        ##### Section removed as I do not believe it was quite correct #####
+
         if limit_price is not None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
@@ -293,6 +345,20 @@ class Orders:
                 self.limit_passed = True
             else:
                 return False
+        '''
+
+        if limit_price is not None and not self.limit_passed:
+            if target_amount > 0 and self.price < limit_price:
+                self.limit_passed = True
+            elif target_amount < 0 and self.price > limit_price:
+                self.limit_passed = True
+            elif data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
+                data.current_date]:
+                self.price = limit_price
+                self.limit_passed = True
+            else:
+                return False
+
         if (target_amount > self.current_number_of_shares >= 0) or (
                 target_amount < self.current_number_of_shares <= 0):  # Either going more long or more short
             amount_to_order = target_amount - self.current_number_of_shares
@@ -360,6 +426,9 @@ class Orders:
 
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
+        '''
+        ##### Section removed as I do not believe it was quite correct #####
+
         if limit_price is not None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
@@ -367,6 +436,20 @@ class Orders:
                 self.limit_passed = True
             else:
                 return False
+        '''
+
+        if limit_price is not None and not self.limit_passed:
+            if target_value > 0 and self.price < limit_price:
+                self.limit_passed = True
+            elif target_value < 0 and self.price > limit_price:
+                self.limit_passed = True
+            elif data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
+                data.current_date]:
+                self.price = limit_price
+                self.limit_passed = True
+            else:
+                return False
+
         if target_value >= 0:
             target_amount = floor(target_value / self.price)
         elif target_value < 0:
@@ -410,6 +493,9 @@ class Orders:
         """
         # Checking if the limit order has passed. Possibility to default self.limit_passed to True if no limit order
         # has been placed
+        '''
+        ##### Section removed as I do not believe it was quite correct #####
+
         if limit_price is not None and not self.limit_passed:
             if data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
                 data.current_date]:
@@ -417,6 +503,20 @@ class Orders:
                 self.limit_passed = True
             else:
                 return False
+        '''
+
+        if limit_price is not None and not self.limit_passed:
+            if target_percent > 0 and self.price < limit_price:
+                self.limit_passed = True
+            elif target_percent < 0 and self.price > limit_price:
+                self.limit_passed = True
+            elif data.daily_lows[self.symbol].loc[data.current_date] <= limit_price <= data.daily_highs[self.symbol].loc[
+                data.current_date]:
+                self.price = limit_price
+                self.limit_passed = True
+            else:
+                return False
+
         target_value = target_percent * self.capital
         return self.order_target_value(target_value)
 

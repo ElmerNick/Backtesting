@@ -97,6 +97,7 @@ start_date = date(2000, 1, 1)  # The date trading will start
 end_date = date(2020, 2, 13)  # The date trading will end
 
 Results = run(stock_data=stock_data,
+              before_everything_starts=before_everything_starts,
               before_backtest_start=before_backtest_start,
               trade_every_day_open=trade_every_day_open,
               trade_open=trade_open,
@@ -112,4 +113,6 @@ Results = run(stock_data=stock_data,
               starting_cash=starting_cash,
               data_source='Norgate',
               start_date=start_date,
-              end_date=end_date)
+              end_date=end_date,
+              auto_plot=True,
+              plot_title='Backtest')

@@ -1255,10 +1255,12 @@ def run(stock_data,
         trade_list = data.trade_df
         trade_list['close_date'] = pd.to_datetime(trade_list['close_date'])
         trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
-        if data_source == 'Norgate':
-            trade_list['symbol'] = [norgatedata.symbol(asset_id) for asset_id in trade_list['symbol']]
         positions_track = data.positions_tracker.fillna(method='ffill').dropna(how='all')
         value_track = positions_track.mul(data.daily_closes)
+        if data_source == 'Norgate':
+            trade_list['symbol'] = [norgatedata.symbol(asset_id) for asset_id in trade_list['symbol']]
+            positions_track.columns = [norgatedata.symbol(x) for x in positions_track.columns]
+            value_track.columns = [norgatedata.symbol(x) for x in value_track.columns]
         value_track.loc[:, 'Total'] = value_track.sum(axis=1)
         return trade_list, positions_track, value_track
 

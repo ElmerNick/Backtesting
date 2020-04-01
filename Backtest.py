@@ -1204,7 +1204,7 @@ def run(stock_data,
         The function containing all the logic you wish to happen before the first trading date.
     trade_every_day_open : function
         A function which is called every trading day at the open, regardless of what you select your reblance
-        frequency to be. If `rebalance` is 'daily', then there is no need to use this function. This is called before
+        frequency to be. If `rebalance` is 'daily', then there is no need to use this function. This is called after
         trade_open.
     trade_open : function
         A function which will be called at the frequency defined by rebalance. At this point data.current price will be
@@ -1320,10 +1320,13 @@ def run(stock_data,
 
             if d in trading_dates:
                 trade_open(user, data)
-                data.current_price = data.daily_closes.loc[d]
+
+            trade_every_day_open(user, data)
+            data.current_price = data.daily_closes.loc[d]
+
+            if d in trading_dates:
                 trade_close(user, data)
 
-            data.current_price = data.daily_closes.loc[d]
             trade_every_day_close(user, data)
 
             update()

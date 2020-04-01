@@ -35,17 +35,17 @@ In each of the functions below, two useful variables have been provided. `d` is 
 the backtest. `index_today` is the row number relating to this date in `data.daily_closes`. You can use `index_today`
 for creating history variables.
 '''
-def trade_every_day_open(user, data):
-    '''
-    This is run every day regardless of `rebalance` frequency. If you are on a day where `trade_open` will execute, this
-    function will run first.
-    '''
+def trade_open(user, data):
     d = data.current_date
     index_today = data.daily_closes.index.get_loc(d)
     return
 
 
-def trade_open(user, data):
+def trade_every_day_open(user, data):
+    '''
+    This is run every day regardless of `rebalance` frequency. If you are on a day where `trade_open` will execute, this
+    function will run after.
+    '''
     d = data.current_date
     index_today = data.daily_closes.index.get_loc(d)
     return
@@ -94,7 +94,7 @@ max_lookback = 200
 starting_cash = 100000  # 2 dp. float
 data_source = 'Norgate'  # Either 'Norgate' or 'local_csv'
 start_date = date(2000, 1, 1)  # The date trading will start
-end_date = date(2020, 2, 13)  # The date trading will end
+end_date = date(2020, 3, 31)  # The date trading will end
 
 Results = run(stock_data=stock_data,
               before_everything_starts=before_everything_starts,

@@ -1351,21 +1351,19 @@ def run(stock_data,
     if not data.optimising:
         data.number_of_trades = len(data.trade_df)
         data.number_winning_trades = len(data.trade_df[data.trade_df['profit'] > 0])
-
-    # summary_report_columns = ['Number of Trade', 'Percent Profitable', 'Average Trade Net Profit']
-    percent_profitable = 100 * (data.number_winning_trades / data.number_of_trades)
-    av_trade_profit = (data.wealth_track[-1] - data.starting_amount) / data.number_of_trades
-    summary_report_data = {'Number of Trades': data.number_of_trades,
-                           'Percent Profitable': f'{round(percent_profitable,2)}%',
-                           'Average Trade Net Profit': av_trade_profit}
-    summary_report = pd.DataFrame(data=summary_report_data)
+        percent_profitable = 100 * (data.number_winning_trades / data.number_of_trades)
+        av_trade_profit = (data.wealth_track[-1] - data.starting_amount) / data.number_of_trades
+        summary_report_data = {'Number of Trades': data.number_of_trades,
+                               'Percent Profitable': f'{round(percent_profitable,2)}%',
+                               'Average Trade Net Profit': av_trade_profit}
+        summary_report = pd.DataFrame(data=summary_report_data, index=[0])
 
     if data.optimising:
         if opt_results_save_loc != '':
             data.optimisation_report.to_csv(
                 '{}\\Results_{}.csv'.format(opt_results_save_loc, datetime.now().strftime('%d%m%y %H%M')),
                 index=True, index_label='Test_Number')
-        return data.optimisation_report, summary_report
+        return data.optimisation_report
 
     else:
         if auto_plot:

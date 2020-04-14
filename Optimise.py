@@ -117,7 +117,9 @@ def record_backtest(combination_row):
     yearly_profits *= 100 / data.starting_amount
     for year in yearly_profits.index:
         data.optimisation_report.at[combination_row, year] = yearly_profits[year]
-    data.optimisation_report.at[combination_row, 'Standard Dev of Yearly Returns'] = yearly_profits.std()
+    stddev_yearly_returns = yearly_profits.std()
+    data.optimisation_report.at[combination_row, 'Standard Dev of Yearly Returns'] = stddev_yearly_returns
+    data.optimisation_report.at[combination_row, r'Rate / StdDev'] = realised_rate / stddev_yearly_returns
 
 
 def plot_tests(test_numbers, title=None):

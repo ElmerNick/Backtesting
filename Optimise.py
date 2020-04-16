@@ -108,9 +108,13 @@ def record_backtest(combination_row):
     data.optimisation_report.at[combination_row, 'total_profit'] = total_profit
     data.optimisation_report.at[combination_row, 'realised_rate'] = realised_rate
     data.optimisation_report.at[combination_row, 'number_of_trades'] = data.number_of_trades
-    data.optimisation_report.at[combination_row, 'percent profitable trades'] = 100 * \
-                                                                (data.number_winning_trades / data.number_of_trades)
-    data.optimisation_report.at[combination_row, 'average_trade_net_profit'] = total_profit / data.number_of_trades
+    try:
+        data.optimisation_report.at[combination_row, 'percent profitable trades'] = 100 * \
+                                                                    (data.number_winning_trades / data.number_of_trades)
+        data.optimisation_report.at[combination_row, 'average_trade_net_profit'] = total_profit / data.number_of_trades
+    except ZeroDivisionError:
+        data.optimisation_report.at[combination_row, 'percent profitable trades'] = 0
+        data.optimisation_report.at[combination_row, 'average_trade_net_profit'] = 0
 
     yearly_profits = wealth_track_df.resample('Y').last().diff()
     yearly_profits.index = yearly_profits.index.year

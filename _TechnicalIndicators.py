@@ -10,6 +10,19 @@ from tqdm import tqdm
 import numpy as np
 from math import sqrt
 
+def historic_avg_changes(prices, n=14):
+    delta = prices.diff()
+    up, down = delta.copy(), delta.copy()
+    up[up < 0] = 0
+    down[down > 0] = 0
+
+    roll_up = up.ewm(alpha=1/n, min_periods=n).mean()
+    roll_down = down.abs().ewm(alpha=1/n, min_periods=n).mean()
+
+    # RS = roll_up / roll_down
+    # RSI = 100 - (100 / (1 + RS))
+    return roll_up.iloc[-1], roll_down.iloc[-1]
+
 
 def RSI(prices, n=14):
     """

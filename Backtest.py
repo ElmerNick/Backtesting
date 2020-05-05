@@ -1305,37 +1305,42 @@ def run(stock_data,
 
     before_everything_starts(user, data)
 
-    for i in range(number_of_rows):
-        for j in range(len(data.combination_df.columns)):
-            variable = data.combination_df.columns[j]
-            value = data.combination_df.iat[i, j]
-            if variable[:5] == 'user.':
-                exec('{} = {}'.format(variable, value))
-            else:
-                exec('user.{} = {}'.format(variable, value))
+    with tqdm(range(number_of_rows)) as pbar:
+        for i in pbar:
+            for j in range(len(data.combination_df.columns)):
+                variable = data.combination_df.columns[j]
+                value = data.combination_df.iat[i, j]
+                if variable[:5] == 'user.':
+                    exec('{} = {}'.format(variable, value))
+                else:
+                    exec('user.{} = {}'.format(variable, value))
 
-        before_backtest_start(user, data)
-        initialise()
-        pbar = tqdm(total=len(data.all_dates), desc='Test {}'.format(str(i + 1)), position=0, leave=True)
-        for d in data.all_dates:
-            data.current_date = d
+            before_backtest_start(user, data)
+            initialise()
+            # pbar = tqdm(total=len(data.all_dates), desc='Test {}'.format(str(i + 1)), position=0, leave=True)
+            progress = 0
+            number_of_bars = len(data.all_dates)
+            for d in data.all_dates:
+                data.current_date = d
 
-            data.current_price = data.daily_opens.loc[d]
-            trade_every_day_open(user, data)
+                data.current_price = data.daily_opens.loc[d]
+                trade_every_day_open(user, data)
 
-            if d in trading_dates:
-                trade_open(user, data)
+                if d in trading_dates:
+                    trade_open(user, data)
 
-            trade_every_day_open(user, data)
-            data.current_price = data.daily_closes.loc[d]
+                trade_every_day_open(user, data)
+                data.current_price = data.daily_closes.loc[d]
 
-            if d in trading_dates:
-                trade_close(user, data)
+                if d in trading_dates:
+                    trade_close(user, data)
 
-            trade_every_day_close(user, data)
+                trade_every_day_close(user, data)
 
-            update()
-            pbar.update(1)
+                update()
+                # pbar.update(1)
+                progress += 100
+                pbar.set_postfix(inner_loop=int(progress/number_of_bars), refresh=True)
         for x in list(data.current_positions):
             Orders(x, close_reason='End of Backtest').order_target_amount(0)
 

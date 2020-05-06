@@ -1341,17 +1341,16 @@ def run(stock_data,
                 # pbar.update(1)
                 progress += 100
                 pbar.set_postfix(inner_loop=int(progress/number_of_bars), refresh=True)
-        for x in list(data.current_positions):
-            Orders(x, close_reason='End of Backtest').order_target_amount(0)
+            for x in list(data.current_positions):
+                Orders(x, close_reason='End of Backtest').order_target_amount(0)
 
-        after_backtest_finish(user, data)
+            after_backtest_finish(user, data)
 
-        if data.optimising:
-            Optimise.record_backtest(combination_row=i)
-            if opt_results_save_loc != '':
-                data.optimisation_report.to_csv('{}\\temp.csv'.format(opt_results_save_loc),
+            if data.optimising:
+                Optimise.record_backtest(combination_row=i)
+                if opt_results_save_loc != '':
+                    data.optimisation_report.to_csv('{}\\temp.csv'.format(opt_results_save_loc),
                                                 index=True, index_label='Test_Number')
-        pbar.close()
 
     if not data.optimising:
         data.number_of_trades = len(data.trade_df)

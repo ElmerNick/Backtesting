@@ -682,10 +682,12 @@ class Orders:
         else:
             todays_low = data.daily_lows[self.symbol].loc[data.current_date]
             todays_high = data.daily_highs[self.symbol].loc[data.current_date]
+            todays_open = data.daily_opens[self.symbol].loc[data.current_date]
             if trade_number is None:
+                symbol_long_or_short = self.all_open_trade_rows['long_or_short'].iloc[0]
                 entry_value = self.all_open_trade_rows['open_value'].sum()
                 # stop_value = (1 - stop_loss_percent) * entry_value
-                if self.all_open_trade_rows['long_or_short'].iloc[0] == 'long':
+                if symbol_long_or_short == 'long':
                     min_value_today = self.current_number_of_shares * todays_low
                     stop_value = (1 - stop_loss_percent) * entry_value
                 else:
@@ -695,10 +697,15 @@ class Orders:
                 if min_value_today < stop_value:  # Same for long or short
                     # print('Exit all')
                     stop_price = stop_value / self.current_number_of_shares
-                    if todays_low <= stop_price <= todays_high:
+                    if (todays_open <= stop_price and symbol_long_or_short == 'long') or\
+                        (todays_open >= stop_price and symbol_long_or_short == 'short'):
+                            exit_price = todays_open
+
+                    elif todays_low <= stop_price <= todays_high:
                         exit_price = stop_price
                     else:
-                        exit_price = data.daily_opens[self.symbol].loc[data.current_date]
+                        # exit_price = data.daily_opens[self.symbol].loc[data.current_date]
+                        print('This should not happen (Stop-loss not working 0)')
                     if close_if_hit:
                         self.order_target_amount(0, limit_price=exit_price)
                     return True
@@ -709,8 +716,9 @@ class Orders:
                 trade_row = data.trade_df.loc[trade_number]
                 entry_value = trade_row['open_value']
                 number_of_shares = trade_row['amount']
+                symbol_long_or_short = trade_row['long_or_short']
                 # stop_value = (1 - stop_loss_percent) * entry_value
-                if trade_row['long_or_short'] == 'long':
+                if symbol_long_or_short == 'long':
                     min_value_today = number_of_shares * todays_low
                     stop_value = (1 - stop_loss_percent) * entry_value
                 else:
@@ -719,10 +727,17 @@ class Orders:
 
                 if min_value_today < stop_value:
                     stop_price = stop_value / number_of_shares
-                    if todays_low < stop_price < todays_high:
+
+                    if (todays_open <= stop_price and symbol_long_or_short == 'long') or\
+                        (todays_open >= stop_price and symbol_long_or_short == 'short'):
+                            exit_price = todays_open
+
+                    elif todays_low <= stop_price <= todays_high:
                         exit_price = stop_price
+
                     else:
-                        exit_price = data.daily_opens[self.symbol].loc[data.current_date]
+                        # exit_price = data.daily_opens[self.symbol].loc[data.current_date]
+                        print('This should not happen (Stop-loss not working 1)')
                     if close_if_hit:
                         self._fully_close_row(trade_number)
                     return True

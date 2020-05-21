@@ -649,3 +649,15 @@ def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
     else:
         raise ValueError('method must either be simple or wilders')
     return Avg_True_Ranges
+
+
+def MACD(prices, fast_length=12, slow_length=26):
+
+    fast_ema = prices.ewm(span=fast_length, min_periods=fast_length).mean()
+    slow_ema = prices.ewm(span=slow_length, min_periods=slow_length).mean()
+    return fast_ema - slow_ema
+
+
+
+
+

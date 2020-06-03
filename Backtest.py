@@ -1415,7 +1415,7 @@ def _run_download_data_norgate(stock_data,
         if type(s) == tuple:
             for stock in s:
                 symbols.add(norgatedata.assetid(stock))
-        elif s[:6] == 'Liquid':
+        elif type(s) == string:
             if s == 'Liquid_500':
                 daily_universes = pd.read_csv(
                     r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_500_most_recent.csv',
@@ -1423,6 +1423,14 @@ def _run_download_data_norgate(stock_data,
             elif s == 'Liquid_1500':
                 daily_universes = pd.read_csv(
                     r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_1500_most_recent.csv',
+                    index_col=0, parse_dates=True)
+            elif s == 'Russell 3000':
+                daily_universes = pd.read_csv(
+                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\Russell_3000_most_recent.csv',
+                    index_col=0, parse_dates=True)
+            elif s == 'S&P 500':
+                daily_universes = pd.read_csv(
+                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\S&P_500_most_recent.csv',
                     index_col=0, parse_dates=True)
             daily_universes = daily_universes.dropna(how='all')
             daily_universes = daily_universes.loc[start_date:end_date]
@@ -1434,6 +1442,7 @@ def _run_download_data_norgate(stock_data,
                 syms = syms.union(unique_universes[col].unique())
             data.daily_universes = daily_universes
             symbols = symbols.union(syms)
+
     get_norgatedata(symbols,
                     fields=data_fields,
                     start_date=data_start,

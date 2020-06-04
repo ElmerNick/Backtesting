@@ -1415,7 +1415,7 @@ def _run_download_data_norgate(stock_data,
         if type(s) == tuple:
             for stock in s:
                 symbols.add(norgatedata.assetid(stock))
-        elif type(s) == string:
+        elif type(s) == str:
             if s == 'Liquid_500':
                 daily_universes = pd.read_csv(
                     r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_500_most_recent.csv',

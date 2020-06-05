@@ -524,7 +524,10 @@ def TrueHigh(Highs, Closes):
         stocks.
 
     """
-    TH_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
+    if isinstance(Closes, pd.DataFrame):
+        TH_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
+    elif isinstance(Closes, pd.Series):
+        TH_df = pd.Series(index=Closes.index)
     yesterday_closes = Closes.shift(1)
     TH_df[yesterday_closes > Highs] = yesterday_closes
     TH_df[yesterday_closes <= Highs] = Highs
@@ -552,7 +555,10 @@ def TrueLow(Lows, Closes):
         stocks.
 
     """
-    TL_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
+    if isinstance(Closes, pd.DataFrame):
+        TL_df = pd.DataFrame(index=Closes.index, columns=Closes.columns)
+    elif isinstance(Closes, pd.Series):
+        TL_df = pd.Series(index=Closes.index)
     yesterday_closes = Closes.shift(1)
     TL_df[yesterday_closes < Lows] = yesterday_closes
     TL_df[yesterday_closes >= Lows] = Lows
@@ -656,8 +662,3 @@ def MACD(prices, fast_length=12, slow_length=26):
     fast_ema = prices.ewm(span=fast_length, min_periods=fast_length).mean()
     slow_ema = prices.ewm(span=slow_length, min_periods=slow_length).mean()
     return fast_ema - slow_ema
-
-
-
-
-

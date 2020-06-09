@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Jan  3 14:35:34 2020
 
@@ -406,7 +405,7 @@ def TrueRangeCustom(Highs, Lows, Closes):
     return TrueRange_df
 
 
-def ADX(Highs, Lows, Closes, length=10):
+def old_ADX(Highs, Lows, Closes, length=10):
     """
     Similar to Tradestation function. Uses the TrueRangeCustom function to
     calculate the ADX values for a time-series prices dataframe
@@ -503,6 +502,50 @@ def ADX(Highs, Lows, Closes, length=10):
     return ADX_df
 
 
+def ADX(Highs, Lows, Closes, length=10):
+    """
+    Calculates ADX values for a pandas.DataFrame
+
+    Parameters
+    ----------
+    Highs : pandas-dataframe
+        Time-series dataframe with the highs of each day for multiple stocks.
+    Lows : pandas-dataframe
+        Time-series dataframe with the lows of each day for multiple stocks.
+    Closes : pandas-dataframe
+        Time-series dataframe with the closes of each day for multiple stocks.
+    length : int, optional
+        Lookback length for the ADX values. The default is 10.
+
+    Returns
+    -------
+    ADX_df : pandas-dataframe
+        Time-series dataframe with the calculated ADX values. The first
+        'length' values will be NaN.
+
+    """
+    all_TR = TrueRange(Highs, Lows, Closes)
+    all_ATR = all_TR.ewm(alpha=1/length, min_periods=length).mean()
+
+    pos_move_ups = Highs.diff().clip(lower=0)
+    neg_move_downs = (-1*Lows.diff()).clip(lower=0)
+
+    pos_move_ups[pos_move_ups < neg_move_downs] = 0
+    neg_move_downs[neg_move_downs < pos_move_ups] = 0
+
+    exp_pos_move_ups = pos_move_ups.ewm(alpha=1/length, min_periods=length).mean()
+    exp_neg_move_downs = neg_move_downs.ewm(alpha=1/length, min_periods=length).mean()
+
+    all_PDIs = 100 * (exp_pos_move_ups / all_ATR)
+    all_NDIs = 100 * (exp_neg_move_downs / all_ATR)
+
+    DX_df = 100 * ((all_PDIs - all_NDIs).abs() / (all_PDIs + all_NDIs))
+
+    ADX_df = DX_df.ewm(alpha=1/length, min_periods=length).mean()
+
+    return ADX_df
+
+
 def TrueHigh(Highs, Closes):
     """
     Calculates the true high values for time-series data of multiple stocks.
@@ -592,7 +635,7 @@ def TrueRange(Highs, Lows, Closes):
     return True_Highs - True_Lows
 
 
-def AvgTrueRange(Highs, Lows, Closes, length=10, method='simple'):
+def AvgTrueRange(Highs, Lows, Closes, length=10, method='wilders'):
     """
     Calculates the average true range values of a time-series dataframe.
 

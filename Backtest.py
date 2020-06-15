@@ -148,7 +148,7 @@ class Orders:
             if not self.able_to_exceed and abs(value_of_order) > value_space:
                 amount = ceil(-value_space / self.price)  # Recalculates the amount to place an order for
                 value_of_order = amount * self.price
-        if -10 <= amount <= 10:
+        if abs(amount) <= self.min_to_enter:
             return False
 
         data.trade_df = data.trade_df.append({
@@ -744,6 +744,15 @@ class Orders:
                 else:
                     return False
 
+    def check_take_profit(self,
+                          floor_pct,
+                          giveback_pct,
+                          close_if_hit=True,
+                          trade_number=None,
+                          eod=False,
+                          sod=False):
+
+        return
 
 def get_norgatedata(symbol_list,
                     start_date=date(2000, 1, 1),
@@ -1196,6 +1205,7 @@ def run(stock_data,
         opt_params=None,
         data_fields=('Open', 'High', 'Low', 'Close'),
         data_adjustment='TotalReturn',
+        start_when_all_in=False,
         rebalance='daily',
         max_lookback=200,
         starting_cash=100000,
@@ -1299,7 +1309,8 @@ def run(stock_data,
                                    end_date,
                                    max_lookback,
                                    data_fields,
-                                   data_adjustment)
+                                   data_adjustment,
+                                   start_when_all_in)
     elif data_source == 'local_csv':
         _run_import_local_csv(stock_data,
                               start_date,
@@ -1339,7 +1350,6 @@ def run(stock_data,
                 data.current_date = d
 
                 data.current_price = data.daily_opens.loc[d]
-                trade_every_day_open(user, data)
 
                 if d in trading_dates:
                     trade_open(user, data)
@@ -1407,7 +1417,8 @@ def _run_download_data_norgate(stock_data,
                                end_date,
                                max_lookback,
                                data_fields,
-                               data_adjustment):
+                               data_adjustment,
+                               start_when_all_in):
     data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)
 
     symbols = set()
@@ -1435,19 +1446,19 @@ def _run_download_data_norgate(stock_data,
             daily_universes = daily_universes.dropna(how='all')
             daily_universes = daily_universes.loc[start_date:end_date]
             daily_universes.dropna(axis=1, how='all', inplace=True)
-            daily_universes = daily_universes.astype(int)
+            daily_universes = daily_universes.astype(int, errors='ignore')
             unique_universes = daily_universes.drop_duplicates()
             syms = set()
             for col in unique_universes.columns:
                 syms = syms.union(unique_universes[col].unique())
             data.daily_universes = daily_universes
             symbols = symbols.union(syms)
-
+    symbols = {int(x) for x in symbols if x==x}
     get_norgatedata(symbols,
                     fields=data_fields,
                     start_date=data_start,
                     end_date=end_date,
-                    start_when_all_are_in=False,
+                    start_when_all_are_in=start_when_all_in,
                     adjustment=data_adjustment)
 
 

@@ -148,7 +148,7 @@ class Orders:
             if not self.able_to_exceed and abs(value_of_order) > value_space:
                 amount = ceil(-value_space / self.price)  # Recalculates the amount to place an order for
                 value_of_order = amount * self.price
-        if abs(amount) <= self.min_to_enter:
+        if abs(amount) < self.min_to_enter:
             return False
 
         data.trade_df = data.trade_df.append({
@@ -754,6 +754,7 @@ class Orders:
 
         return
 
+
 def get_norgatedata(symbol_list,
                     start_date=date(2000, 1, 1),
                     end_date=datetime.now().date(),
@@ -860,8 +861,12 @@ def get_norgatedata(symbol_list,
         pbar.update(1)
     pbar.close()
 
+    nyse = mcal.get_calendar('NYSE')
+    all_valid_dates = nyse.valid_days(start_date, end_date)
+
     if need_close:
         daily_closes = daily_closes.dropna(how='all')
+        daily_closes = daily_closes.reindex(all_valid_dates.date)
         if forward_fill_prices:
             daily_closes = daily_closes.fillna(method='ffill') + (daily_closes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -870,6 +875,7 @@ def get_norgatedata(symbol_list,
 
     if need_open:
         daily_opens = daily_opens.dropna(how='all')
+        daily_opens = daily_opens.reindex(all_valid_dates.date)
         if forward_fill_prices:
             daily_opens = daily_opens.fillna(method='ffill') + (daily_opens.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -878,6 +884,7 @@ def get_norgatedata(symbol_list,
 
     if need_high:
         daily_highs = daily_highs.dropna(how='all')
+        daily_highs = daily_highs.reindex(all_valid_dates.date)
         if forward_fill_prices:
             daily_highs = daily_highs.fillna(method='ffill') + (daily_highs.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -886,6 +893,7 @@ def get_norgatedata(symbol_list,
 
     if need_low:
         daily_lows = daily_lows.dropna(how='all')
+        daily_lows = daily_lows.reindex(all_valid_dates.date)
         if forward_fill_prices:
             daily_lows = daily_lows.fillna(method='ffill') + (daily_lows.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -894,6 +902,7 @@ def get_norgatedata(symbol_list,
 
     if need_volume:
         daily_volumes = daily_volumes.dropna(how='all')
+        daily_volumes = daily_volumes.reindex(all_valid_dates.date)
         if forward_fill_prices:
             daily_volumes = daily_volumes.fillna(method='ffill') + (daily_volumes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -902,6 +911,7 @@ def get_norgatedata(symbol_list,
 
     if need_turnover:
         daily_turnovers = daily_turnovers.dropna(how='all')
+        daily_turnovers = daily_turnovers.reindex(all_valid_dates.date)
         if forward_fill_prices:
             daily_turnovers = daily_turnovers.fillna(method='ffill') + (daily_turnovers.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -910,6 +920,7 @@ def get_norgatedata(symbol_list,
 
     if need_unadjustedclose:
         daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='all')
+        daily_unadjustedcloses = daily_unadjustedcloses.reindex(all_valid_dates.date)
         if forward_fill_prices:
             daily_unadjustedcloses = daily_unadjustedcloses.fillna(method='ffill') + (
                     daily_unadjustedcloses.fillna(method='bfill') * 0)
@@ -1206,6 +1217,7 @@ def run(stock_data,
         data_fields=('Open', 'High', 'Low', 'Close'),
         data_adjustment='TotalReturn',
         start_when_all_in=False,
+        ffill_prices=True,
         rebalance='daily',
         max_lookback=200,
         starting_cash=100000,
@@ -1310,7 +1322,8 @@ def run(stock_data,
                                    max_lookback,
                                    data_fields,
                                    data_adjustment,
-                                   start_when_all_in)
+                                   start_when_all_in,
+                                   ffill_prices)
     elif data_source == 'local_csv':
         _run_import_local_csv(stock_data,
                               start_date,
@@ -1401,6 +1414,7 @@ def run(stock_data,
                          title=plot_title)
         trade_list = data.trade_df
         trade_list['close_date'] = pd.to_datetime(trade_list['close_date'])
+        trade_list['open_date'] = pd.to_datetime(trade_list['open_date'])
         trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
         positions_track = data.positions_tracker.fillna(method='ffill').dropna(how='all')
         value_track = positions_track.mul(data.daily_closes)
@@ -1418,7 +1432,8 @@ def _run_download_data_norgate(stock_data,
                                max_lookback,
                                data_fields,
                                data_adjustment,
-                               start_when_all_in):
+                               start_when_all_in,
+                               ffill_prices):
     data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)
 
     symbols = set()
@@ -1459,7 +1474,8 @@ def _run_download_data_norgate(stock_data,
                     start_date=data_start,
                     end_date=end_date,
                     start_when_all_are_in=start_when_all_in,
-                    adjustment=data_adjustment)
+                    adjustment=data_adjustment,
+                    forward_fill_prices=ffill_prices)
 
 
 def _run_import_local_csv(stock_data,
@@ -1481,4 +1497,7 @@ def _run_import_local_csv(stock_data,
         daily_data.dropna(how='all')
         exec('data.{} = daily_data'.format(fname))
 
-    data.all_date = data.daily_closes.index
+    data.daily_closes.dropna(inplace=True)
+    data.daily_closes.dropna(inplace=True)
+
+    data.all_dates = data.daily_closes.index

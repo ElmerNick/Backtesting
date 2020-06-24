@@ -865,8 +865,8 @@ def get_norgatedata(symbol_list,
     all_valid_dates = nyse.valid_days(start_date, end_date)
 
     if need_close:
-        daily_closes = daily_closes.dropna(how='all')
         daily_closes = daily_closes.reindex(all_valid_dates.date)
+        daily_closes = daily_closes.dropna(how='all')
         if forward_fill_prices:
             daily_closes = daily_closes.fillna(method='ffill') + (daily_closes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -874,8 +874,8 @@ def get_norgatedata(symbol_list,
         data.daily_closes = daily_closes
 
     if need_open:
-        daily_opens = daily_opens.dropna(how='all')
         daily_opens = daily_opens.reindex(all_valid_dates.date)
+        daily_opens = daily_opens.dropna(how='all')
         if forward_fill_prices:
             daily_opens = daily_opens.fillna(method='ffill') + (daily_opens.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -883,8 +883,8 @@ def get_norgatedata(symbol_list,
         data.daily_opens = daily_opens
 
     if need_high:
-        daily_highs = daily_highs.dropna(how='all')
         daily_highs = daily_highs.reindex(all_valid_dates.date)
+        daily_highs = daily_highs.dropna(how='all')
         if forward_fill_prices:
             daily_highs = daily_highs.fillna(method='ffill') + (daily_highs.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -892,8 +892,8 @@ def get_norgatedata(symbol_list,
         data.daily_highs = daily_highs
 
     if need_low:
-        daily_lows = daily_lows.dropna(how='all')
         daily_lows = daily_lows.reindex(all_valid_dates.date)
+        daily_lows = daily_lows.dropna(how='all')
         if forward_fill_prices:
             daily_lows = daily_lows.fillna(method='ffill') + (daily_lows.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -901,8 +901,8 @@ def get_norgatedata(symbol_list,
         data.daily_lows = daily_lows
 
     if need_volume:
-        daily_volumes = daily_volumes.dropna(how='all')
         daily_volumes = daily_volumes.reindex(all_valid_dates.date)
+        daily_volumes = daily_volumes.dropna(how='all')
         if forward_fill_prices:
             daily_volumes = daily_volumes.fillna(method='ffill') + (daily_volumes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -910,8 +910,8 @@ def get_norgatedata(symbol_list,
         data.daily_volumes = daily_volumes
 
     if need_turnover:
-        daily_turnovers = daily_turnovers.dropna(how='all')
         daily_turnovers = daily_turnovers.reindex(all_valid_dates.date)
+        daily_turnovers = daily_turnovers.dropna(how='all')
         if forward_fill_prices:
             daily_turnovers = daily_turnovers.fillna(method='ffill') + (daily_turnovers.fillna(method='bfill') * 0)
         if start_when_all_are_in:
@@ -919,8 +919,8 @@ def get_norgatedata(symbol_list,
         data.daily_turnovers = daily_turnovers
 
     if need_unadjustedclose:
-        daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='all')
         daily_unadjustedcloses = daily_unadjustedcloses.reindex(all_valid_dates.date)
+        daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='all')
         if forward_fill_prices:
             daily_unadjustedcloses = daily_unadjustedcloses.fillna(method='ffill') + (
                     daily_unadjustedcloses.fillna(method='bfill') * 0)

@@ -871,6 +871,7 @@ def get_norgatedata(symbol_list,
             daily_closes = daily_closes.fillna(method='ffill') + (daily_closes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_closes = daily_closes.dropna(how='any')
+        daily_closes.index = pd.to_datetime(daily_closes.index, format='%Y-%m-%d')
         data.daily_closes = daily_closes
 
     if need_open:
@@ -880,6 +881,7 @@ def get_norgatedata(symbol_list,
             daily_opens = daily_opens.fillna(method='ffill') + (daily_opens.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_opens = daily_opens.dropna(how='any')
+        daily_opens.index = pd.to_datetime(daily_opens.index, format='%Y-%m-%d')
         data.daily_opens = daily_opens
 
     if need_high:
@@ -889,6 +891,7 @@ def get_norgatedata(symbol_list,
             daily_highs = daily_highs.fillna(method='ffill') + (daily_highs.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_highs = daily_highs.dropna(how='any')
+        daily_highs.index = pd.to_datetime(daily_highs.index, format='%Y-%m-%d')
         data.daily_highs = daily_highs
 
     if need_low:
@@ -898,6 +901,7 @@ def get_norgatedata(symbol_list,
             daily_lows = daily_lows.fillna(method='ffill') + (daily_lows.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_lows = daily_lows.dropna(how='any')
+        daily_lows.index = pd.to_datetime(daily_lows.index, format='%Y-%m-%d')
         data.daily_lows = daily_lows
 
     if need_volume:
@@ -907,6 +911,7 @@ def get_norgatedata(symbol_list,
             daily_volumes = daily_volumes.fillna(method='ffill') + (daily_volumes.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_volumes = daily_volumes.dropna(how='any')
+        daily_volumes.index = pd.to_datetime(daily_volumes.index, format='%Y-%m-%d')
         data.daily_volumes = daily_volumes
 
     if need_turnover:
@@ -916,6 +921,7 @@ def get_norgatedata(symbol_list,
             daily_turnovers = daily_turnovers.fillna(method='ffill') + (daily_turnovers.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_turnovers = daily_turnovers.dropna(how='any')
+        daily_turnovers.index = pd.to_datetime(daily_turnovers.index, format='%Y-%m-%d')
         data.daily_turnovers = daily_turnovers
 
     if need_unadjustedclose:
@@ -926,6 +932,7 @@ def get_norgatedata(symbol_list,
                     daily_unadjustedcloses.fillna(method='bfill') * 0)
         if start_when_all_are_in:
             daily_unadjustedcloses = daily_unadjustedcloses.dropna(how='any')
+        daily_unadjustedcloses.index = pd.to_datetime(daily_unadjustedcloses.index, format='%Y-%m-%d')
         data.daily_unadjustedcloses = daily_unadjustedcloses
 
     if need_close:

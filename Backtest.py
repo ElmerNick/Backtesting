@@ -1457,6 +1457,10 @@ def _run_download_data_norgate(stock_data,
                 daily_universes = pd.read_csv(
                     r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\US_Liquid_1500_most_recent.csv',
                     index_col=0, parse_dates=True)
+            else:
+                daily_universes = pd.read_csv(
+                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\{}_most_recent.csv'.format(s.replace(' ', '_')),
+                    index_col=0, parse_dates=True)
             '''
             elif s == 'Russell 3000':
                 daily_universes = pd.read_csv(
@@ -1471,10 +1475,6 @@ def _run_download_data_norgate(stock_data,
                     r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\S&P_Composite_1500_most_recent.csv',
                     index_col=0, parse_dates=True)
             '''
-            else:
-                daily_universes = pd.read_csv(
-                    r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\{}_most_recent.csv'.format(s.replace(' ', '_')),
-                    index_col=0, parse_dates=True)
             daily_universes = daily_universes.dropna(how='all')
             daily_universes = daily_universes.loc[start_date:end_date]
             daily_universes.dropna(axis=1, how='all', inplace=True)

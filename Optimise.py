@@ -56,17 +56,22 @@ def create_variable_combinations(list_of_series):
     data.length_of_backtest = 0
 
 
-def create_variable_combinations_dict(param_dict):
+def create_variable_combinations_dict(param_dict, optimise_type):
     variable_names = []
     list_of_tuples = []
     for variable, params in param_dict.items():
         variable_names.append(variable)
         list_of_tuples.append(params)
-
-    combinations = itertools.product(*list_of_tuples)
-    combo_list = []
-    for combo in combinations:
-        combo_list.append(combo)
+    
+    if optimise_type == 'combination':
+        combinations = itertools.product(*list_of_tuples)
+        combo_list = []
+        for combo in combinations:
+            combo_list.append(combo)
+    elif optimise_type == 'fixed':
+        combo_list = []
+        for i in range(len(list_of_tuples[0])):
+            combo_list.append([tup[i] for tup in list_of_tuples])
 
     combo_df = pd.DataFrame(index=range(len(combo_list)), columns=variable_names)
     for i in range(len(combo_list)):

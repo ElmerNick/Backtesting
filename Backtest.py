@@ -749,9 +749,60 @@ class Orders:
                           giveback_pct,
                           close_if_hit=True,
                           trade_number=None,
+                          first_trade=False,
                           eod=False,
                           sod=False):
-
+        if trade_number is None:
+            if first_trade:
+                entry_value = self.all_open_trade_rows['open_value'].iloc[0]
+                grouped_trades = self.all_open_trade_rows.iloc[0:1].reset_index()[['open_date', 'open_price', 'amount']]
+            else:
+                entry_value = self.all_open_trade_rows['open_value'].sum()
+                grouped_trades = self.all_open_trade_rows.groupby(['open_date',
+                                                               'open_price']).agg({'amount': 'sum'}).reset_index()
+            if self.all_open_trade_rows['long_or_short'].iloc[0] == 'long':
+                max_value = 0
+                todays_min_value = 0
+                end_date = data.current_date #+ timedelta(days=1)
+                for row in grouped_trades.itertuples():
+                    open_date = row[1]
+                    max_price = max(data.daily_highs[self.symbol].loc[open_date:end_date])
+                    max_value += row[3] * max_price
+                    todays_min_value += row[3] * data.daily_lows[self.symbol].loc[data.current_date]
+                max_profit = max_value - entry_value
+                todays_min_profit = todays_min_value - entry_value
+                floor_hit = max_profit > entry_value * floor_pct
+                if floor_hit:
+                    if todays_min_profit <= max_profit * (1 - giveback_pct):
+                        tp_price = ((max_profit * (1 - giveback_pct)) + entry_value) / grouped_trades['amount'].sum()
+                        if self.price < tp_price:
+                            tp_price = self.price
+                        self.order_target_amount(0, limit_price=tp_price)
+                else:
+                    return
+                    
+            elif self.all_open_trade_rows['long_or_short'].iloc[0] == 'short':
+                max_value = 0
+                todays_max_value = 0
+                end_date = data.current_date + timedelta(days=1)
+                for row in grouped_trades.itertuples():
+                    open_date = row[1]
+                    min_price = min(data.daily_lows[self.symbol].loc[open_date:end_date])
+                    max_value += row[3] * min_price
+                    todays_min_value += row[3] * data.daily_highs[self.symbol].loc[data.current_date]
+                max_profit = max_value - entry_value
+                todays_min_profit = todays_min_value - entry_value
+                floor_hit = max_profit > entry_value * floor_pct
+                if floor_hit:
+                    if todays_min_profit < max_profit * (1 - giveback_pct):
+                        tp_price = ((max_profit * (1 - giveback_pct)) + abs(entry_value)) / grouped_trades['amount'].sum()
+                        if self.price > tp_price:
+                            tp_price = self.price
+                        self.order_target_amount(0)
+                else:
+                    return
+            
+                    
         return
 
 
@@ -855,9 +906,15 @@ def get_norgatedata(symbol_list,
         if need_volume:
             daily_volumes[symbol] = pricedata_dataframe['Volume']
         if need_turnover:
-            daily_turnovers[symbol] = pricedata_dataframe['Turnover']
+            try:
+                daily_turnovers[symbol] = pricedata_dataframe['Turnover']
+            except KeyError:
+                print(f'No Turnover for {norgatedata.symbol(symbol)}')
         if need_unadjustedclose:
-            daily_unadjustedcloses[symbol] = pricedata_dataframe['Unadjusted Close']
+            try:
+                daily_unadjustedcloses[symbol] = pricedata_dataframe['Unadjusted Close']
+            except KeyError:
+                print(f'No Unadjusted Closes for {norgatedata.symbol(symbol)}')
         pbar.update(1)
     pbar.close()
 
@@ -1219,6 +1276,8 @@ def run(stock_data,
         trade_close,
         trade_every_day_close,
         after_backtest_finish,
+        optimise,
+        optimise_type='combination',
         opt_results_save_loc='',
         opt_params=None,
         data_fields=('Open', 'High', 'Low', 'Close'),
@@ -1318,7 +1377,7 @@ def run(stock_data,
     >>>Please see Nick for help
 
     """
-    if opt_params is None:
+    if opt_params is None or not optimise:
         opt_params = {}
     data.starting_amount = starting_cash
 
@@ -1340,7 +1399,7 @@ def run(stock_data,
                                     rebalance=rebalance,
                                     start_trading=start_date,
                                     end_trading=end_date)
-    Optimise.create_variable_combinations_dict(opt_params)
+    Optimise.create_variable_combinations_dict(opt_params, optimise_type)
     number_of_rows = len(data.combination_df)
     print('Total number of tests:', number_of_rows)
 

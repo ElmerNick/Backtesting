@@ -86,6 +86,8 @@ For optimisations, populate `params_to_optimise`. Write the name of the variable
 of the dictionary to be a tuple of the optimised parameters. The program will run the optimisation on every possible
 combination of the parameters.
 '''
+optimising = True
+optimise_type = 'combination'
 params_to_optimise = {}
 data_fields_needed = ['Open', 'High', 'Low', 'Close']  # The fields needed. If `check_stop_loss` is used, need OHLC
 data_adjustment = 'TotalReturn'  # The type of adjustment of the data
@@ -104,6 +106,8 @@ Results = run(stock_data=stock_data,
               trade_close=trade_close,
               trade_every_day_close=trade_every_day_close,
               after_backtest_finish=after_backtest_finish,
+              optimising=optimising,
+              optimise_type=optimise_type,
               opt_results_save_loc=save_location_of_report,
               opt_params=params_to_optimise,
               data_fields=data_fields_needed,

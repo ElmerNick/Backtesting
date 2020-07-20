@@ -1530,6 +1530,7 @@ def _run_download_data_norgate(stock_data,
             for col in unique_universes.columns:
                 syms = syms.union(unique_universes[col].unique())
             data.daily_universes = daily_universes
+            exec('data.{} = daily_universes'.format(s.replace(' ', '_').replace('&', '')))
             symbols = symbols.union(syms)
     symbols = {int(x) for x in symbols if x==x}
     get_norgatedata(symbols,

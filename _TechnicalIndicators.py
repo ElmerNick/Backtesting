@@ -705,3 +705,9 @@ def MACD(prices, fast_length=12, slow_length=26):
     fast_ema = prices.ewm(span=fast_length, min_periods=fast_length).mean()
     slow_ema = prices.ewm(span=slow_length, min_periods=slow_length).mean()
     return fast_ema - slow_ema
+
+
+def coef_of_variation(Closes, lookback=126):
+    standard_deviations = Closes.rolling(lookback).std()
+    means = Closes.rolling(lookback).mean()
+    return standard_deviations / means

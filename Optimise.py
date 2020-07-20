@@ -63,7 +63,7 @@ def create_variable_combinations_dict(param_dict, optimise_type):
         variable_names.append(variable)
         list_of_tuples.append(params)
     
-    if optimise_type == 'combination':
+    if optimise_type == 'combination' or param_dict == {}:
         combinations = itertools.product(*list_of_tuples)
         combo_list = []
         for combo in combinations:

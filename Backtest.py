@@ -769,41 +769,47 @@ class Orders:
                     max_price = max(data.daily_highs[self.symbol].loc[open_date:end_date])
                     max_value += row[3] * max_price
                     todays_min_value += row[3] * data.daily_lows[self.symbol].loc[data.current_date]
-                max_profit = max_value - entry_value
-                todays_min_profit = todays_min_value - entry_value
-                floor_hit = max_profit > entry_value * floor_pct
+                max_profit_pct = (max_value - entry_value) / entry_value
+                todays_min_profit_pct = (todays_min_value - entry_value) / entry_value
+                floor_hit = max_profit_pct > floor_pct
                 if floor_hit:
-                    if todays_min_profit <= max_profit * (1 - giveback_pct):
-                        tp_price = ((max_profit * (1 - giveback_pct)) + entry_value) / grouped_trades['amount'].sum()
+                    if todays_min_profit_pct <= max_profit_pct * (1 - giveback_pct):
+                        # tp_price = ((max_profit * (1 - giveback_pct)) + entry_value) / grouped_trades['amount'].sum()
+                        tp_price = ((max_profit_pct * (1 - giveback_pct) + 1) * entry_value) / grouped_trades['amount'].sum()
                         if self.price < tp_price:
                             tp_price = self.price
-                        self.order_target_amount(0, limit_price=tp_price)
+                        if close_if_hit:
+                            self.order_target_amount(0, limit_price=tp_price)
+                        return True
                 else:
-                    return
+                    return False
                     
             elif self.all_open_trade_rows['long_or_short'].iloc[0] == 'short':
                 max_value = 0
-                todays_max_value = 0
+                todays_min_value = 0
                 end_date = data.current_date + timedelta(days=1)
                 for row in grouped_trades.itertuples():
                     open_date = row[1]
                     min_price = min(data.daily_lows[self.symbol].loc[open_date:end_date])
                     max_value += row[3] * min_price
                     todays_min_value += row[3] * data.daily_highs[self.symbol].loc[data.current_date]
-                max_profit = max_value - entry_value
-                todays_min_profit = todays_min_value - entry_value
-                floor_hit = max_profit > entry_value * floor_pct
+                max_profit_pct = (max_value - entry_value) / entry_value
+                todays_min_profit_pct = (todays_min_value - entry_value) / entry_value
+                floor_hit = max_profit_pct > floor_pct
                 if floor_hit:
-                    if todays_min_profit < max_profit * (1 - giveback_pct):
-                        tp_price = ((max_profit * (1 - giveback_pct)) + abs(entry_value)) / grouped_trades['amount'].sum()
+                    if todays_min_profit_pct <= max_profit_pct * (1 - giveback_pct):
+                        # tp_price = ((max_profit * (1 - giveback_pct)) + abs(entry_value)) / grouped_trades['amount'].sum()
+                        tp_price = (max_profit_pct * (1 - giveback_pct) * entry_value) / grouped_trades['amount'].sum()
                         if self.price > tp_price:
                             tp_price = self.price
-                        self.order_target_amount(0)
+                        if close_if_hit:
+                            self.order_target_amount(0, limit_price=tp_price)
+                        return True
                 else:
-                    return
+                    return False
             
                     
-        return
+        return False
 
 
 def get_norgatedata(symbol_list,

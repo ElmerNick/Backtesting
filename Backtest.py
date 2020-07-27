@@ -783,7 +783,7 @@ class Orders:
                         return True
                 else:
                     return False
-                    
+
             elif self.all_open_trade_rows['long_or_short'].iloc[0] == 'short':
                 max_value = 0
                 todays_min_value = 0
@@ -793,13 +793,13 @@ class Orders:
                     min_price = min(data.daily_lows[self.symbol].loc[open_date:end_date])
                     max_value += row[3] * min_price
                     todays_min_value += row[3] * data.daily_highs[self.symbol].loc[data.current_date]
-                max_profit_pct = (max_value - entry_value) / entry_value
-                todays_min_profit_pct = (todays_min_value - entry_value) / entry_value
+                max_profit_pct = (max_value - entry_value) / abs(entry_value)
+                todays_min_profit_pct = (todays_min_value - entry_value) / abs(entry_value)
                 floor_hit = max_profit_pct > floor_pct
                 if floor_hit:
                     if todays_min_profit_pct <= max_profit_pct * (1 - giveback_pct):
                         # tp_price = ((max_profit * (1 - giveback_pct)) + abs(entry_value)) / grouped_trades['amount'].sum()
-                        tp_price = (max_profit_pct * (1 - giveback_pct) * entry_value) / grouped_trades['amount'].sum()
+                        tp_price = (1 - (max_profit_pct * (1 - giveback_pct)) * entry_value) / grouped_trades['amount'].sum()
                         if self.price > tp_price:
                             tp_price = self.price
                         if close_if_hit:
@@ -807,8 +807,8 @@ class Orders:
                         return True
                 else:
                     return False
-            
-                    
+
+
         return False
 
 
@@ -1526,7 +1526,7 @@ def _run_download_data_norgate(stock_data,
                 daily_universes = pd.read_csv(
                     r'C:\Users\User\Documents\Backtesting_Creation\Dev\Universes\{}_most_recent.csv'.format(s.replace(' ', '_')),
                     index_col=0, parse_dates=True)
-    
+
             daily_universes = daily_universes.dropna(how='all')
             daily_universes = daily_universes.loc[start_date:end_date]
             daily_universes.dropna(axis=1, how='all', inplace=True)

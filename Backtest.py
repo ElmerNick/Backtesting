@@ -88,7 +88,8 @@ class Orders:
         if not compound:
             self.capital = data.starting_amount
         else:
-            self.capital = data.wealth_track[-1]
+            # self.capital = data.wealth_track[-1]
+            self.capital = data.starting_amount + data.profit
 
     def order_amount(self, amount, limit_price=None):
         """
@@ -134,6 +135,8 @@ class Orders:
             else:
                 return False
 
+        if data.optimising and data.current_date in data.oos_dates:
+            return False
 
         value_of_order = amount * self.price
         value_space = data.starting_amount - data.value_invested  # This is used only if self.able_to_exceed == False
@@ -380,6 +383,7 @@ class Orders:
                     self._part_close_row(trade_number=index, amount_to_close=amount_to_close)
                 elif amount_to_close == 0:
                     break
+            return True
         elif self.current_number_of_shares > 0 > target_amount or self.current_number_of_shares < 0 < target_amount:
             for index, row in self.all_open_trade_rows.iterrows():
                 self._fully_close_row(trade_number=index)
@@ -1164,6 +1168,7 @@ def initialise():
     data.cash = data.starting_amount
     data.wealth = data.starting_amount
     data.value_invested = 0
+    data.profit = 0
 
     columns = ['long_or_short', 'symbol', 'open_date', 'open_price', 'amount',
                'open_value', 'open_reason', 'close_date', 'close_price',
@@ -1202,6 +1207,9 @@ def update():
         data.number_winning_trades += len(all_closed_rows[all_closed_rows['profit'] > 0])
         data.trade_df.drop(all_closed_rows.index, inplace=True)
         data.trade_df.reset_index(drop=True, inplace=True)
+        data.profit += all_closed_rows['profit'].sum()
+    else:
+        data.profit = data.trade_df['profit'].sum()
 
 
 def plot_results(benchmark=None,
@@ -1236,7 +1244,7 @@ def plot_results(benchmark=None,
     tradestation for various useful graphs.
 
     """
-    wealth_list = [x - 100000 for x in data.wealth_track]
+    wealth_list = [x - data.starting_amount for x in data.wealth_track]
     equity_df = pd.DataFrame(columns=['date', 'equity'])
     equity_df['date'] = data.date_track
     equity_df['equity'] = wealth_list
@@ -1284,6 +1292,7 @@ def run(stock_data,
         after_backtest_finish,
         optimise,
         optimise_type='combination',
+        in_out_sampling=None,
         opt_results_save_loc='',
         opt_params=None,
         data_fields=('Open', 'High', 'Low', 'Close'),
@@ -1413,10 +1422,16 @@ def run(stock_data,
         data.optimising = False
     else:
         data.optimising = True
+        if in_out_sampling is not None:
+            data.is_dates, data.oos_dates = get_in_out_sample_dates(in_out_sampling)
+        else:
+            data.is_dates = data.all_dates
+            data.oos_dates = pd.DatetimeIndex([])
+
 
     before_everything_starts(user, data)
 
-    with tqdm(range(number_of_rows)) as pbar:
+    with tqdm(range(number_of_rows), position=0) as pbar:
         for i in pbar:
             for j in range(len(data.combination_df.columns)):
                 variable = data.combination_df.columns[j]
@@ -1571,3 +1586,36 @@ def _run_import_local_csv(stock_data,
     data.daily_closes.dropna(inplace=True)
 
     data.all_dates = data.daily_closes.index
+
+
+def get_in_out_sample_dates(sampling_param_dict):
+    import random
+
+    trim_off_end = sampling_param_dict['end_trim_percent']
+    random_month_remove_pct = sampling_param_dict['random_month_percent']
+
+    all_dates = data.all_dates.copy()
+    num_to_trim = ceil(len(all_dates) * trim_off_end / 100)
+
+    trimmed_dates = all_dates[:-num_to_trim]
+    data.all_dates = trimmed_dates.copy() # Stops all trading from happening at the end of the backtest
+    all_years = trimmed_dates.year.unique()
+
+    is_dates = pd.DatetimeIndex([])
+    oos_dates = pd.DatetimeIndex([])
+
+    for year in all_years:
+        year_dates = trimmed_dates[trimmed_dates.year == year]
+        year_months = year_dates.month.unique()
+        num_months_to_remove = round(random_month_remove_pct * len(year_months) / 100)
+        if num_months_to_remove == 0:
+            continue
+
+        oos_months = random.sample(range(year_months.min(),year_months.max()+1), num_months_to_remove)
+
+        oos_dates = oos_dates.append(year_dates[year_dates.month.isin(oos_months)])
+        is_dates = is_dates.append(year_dates[~year_dates.month.isin(oos_months)])
+
+    oos_dates = oos_dates.append(all_dates[-num_to_trim:])
+
+    return is_dates, oos_dates

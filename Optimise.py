@@ -62,7 +62,7 @@ def create_variable_combinations_dict(param_dict, optimise_type):
     for variable, params in param_dict.items():
         variable_names.append(variable)
         list_of_tuples.append(params)
-    
+
     if optimise_type == 'combination' or param_dict == {}:
         combinations = itertools.product(*list_of_tuples)
         combo_list = []
@@ -160,6 +160,17 @@ def plot_tests(test_numbers, title=None):
 
     """
     fig = go.Figure()
+
+    max_profit = max(max(x) for x in data.optimisation_wealth_tracks) - data.starting_amount
+    in_out_samples = pd.DataFrame(index=data.all_dates.union(data.oos_dates), columns=['IS', 'OOS'])
+    in_out_samples['IS'].loc[data.is_dates] = max_profit * 1.05
+    in_out_samples['OOS'].loc[data.oos_dates] = max_profit * 1.05
+    in_out_samples.fillna(0, inplace=True)
+    fig.add_trace(go.Scatter(x=in_out_samples.index, y=in_out_samples['IS'],
+                             name='In Sample', marker_color='green', fill='tozeroy', line_shape='hv'))
+    fig.add_trace(go.Scatter(x=in_out_samples.index, y=in_out_samples['OOS'],
+                             name='Out of Sample', marker_color='red', fill='tozeroy', line_shape='hv'))
+
     for n in test_numbers:
         profit_series = data.optimisation_wealth_tracks[n] - 100000
         final_equity = profit_series.iloc[-1]

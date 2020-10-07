@@ -86,9 +86,12 @@ For optimisations, populate `params_to_optimise`. Write the name of the variable
 of the dictionary to be a tuple of the optimised parameters. The program will run the optimisation on every possible
 combination of the parameters.
 '''
-optimising = True
+optimise = True
 optimise_type = 'combination'
 params_to_optimise = {}
+in_out_sampling = {'end_trim_percent': 10,
+                   'random_month_percent': 25}
+
 data_fields_needed = ['Open', 'High', 'Low', 'Close']  # The fields needed. If `check_stop_loss` is used, need OHLC
 data_adjustment = 'TotalReturn'  # The type of adjustment of the data
 rebalance = 'daily'  # 'daily', 'weekly', 'month-end', 'month-start'
@@ -106,8 +109,9 @@ Results = run(stock_data=stock_data,
               trade_close=trade_close,
               trade_every_day_close=trade_every_day_close,
               after_backtest_finish=after_backtest_finish,
-              optimising=optimising,
+              optimise=optimise,
               optimise_type=optimise_type,
+              in_out_sampling=in_out_sampling,
               opt_results_save_loc=save_location_of_report,
               opt_params=params_to_optimise,
               data_fields=data_fields_needed,

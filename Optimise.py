@@ -73,7 +73,7 @@ def create_variable_combinations_dict(param_dict, optimise_type):
         for i in range(len(list_of_tuples[0])):
             combo_list.append([tup[i] for tup in list_of_tuples])
 
-    combo_df = pd.DataFrame(index=range(len(combo_list)), columns=variable_names)
+    combo_df = pd.DataFrame(index=range(len(combo_list)), columns=variable_names, dtype=object)
     for i in range(len(combo_list)):
         combo = combo_list[i]
         combo_df.iloc[i] = combo
@@ -117,9 +117,11 @@ def record_backtest(combination_row):
         data.optimisation_report.at[combination_row, 'percent profitable trades'] = 100 * \
                                                                     (data.number_winning_trades / data.number_of_trades)
         data.optimisation_report.at[combination_row, 'average_trade_net_profit'] = total_profit / data.number_of_trades
+        data.optimisation_report.at[combination_row, 'average_trade_%_profit'] = data.profit_percent_array.mean()
     except ZeroDivisionError:
         data.optimisation_report.at[combination_row, 'percent profitable trades'] = 0
         data.optimisation_report.at[combination_row, 'average_trade_net_profit'] = 0
+        data.optimisation_report.at[combination_row, 'average_trade_%_profit'] = 0
 
     yearly_profits = wealth_track_df.resample('Y').last().diff()
     yearly_profits.index = yearly_profits.index.year

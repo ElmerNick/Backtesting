@@ -5,6 +5,7 @@ Created on Mon Jan 20 08:39:14 2020
 @author: Nick Elmer
 """
 import pandas as pd
+import numpy as np
 import data
 import user
 from datetime import date
@@ -540,6 +541,7 @@ class Orders:
         data.trade_df.at[trade_number, 'close_value'] = close_value
         data.trade_df.at[trade_number, 'close_reason'] = self.close_reason
         data.trade_df.at[trade_number, 'profit'] = profit
+        data.trade_df.at[trade_number, 'profit%'] = (profit / row_to_close['open_value']) * 100
 
         data.cash += profit + abs(row_to_close['open_value'])
         data.value_invested -= abs(row_to_close['open_value'])
@@ -569,6 +571,7 @@ class Orders:
         data.trade_df.at[trade_number, 'close_value'] = amount_to_close * self.price
         data.trade_df.at[trade_number, 'close_reason'] = self.close_reason
         data.trade_df.at[trade_number, 'profit'] = profit
+        data.trade_df.at[trade_number, 'profit%'] = (profit / new_open_value) * 100
 
         data.cash += profit + abs(new_open_value)
         data.value_invested -= abs(new_open_value)
@@ -648,7 +651,7 @@ class Orders:
 
                 if eod_value < stop_value:
                     if close_if_hit:
-                        self.fully_close_row(trade_number)
+                        self._fully_close_row(trade_number)
                     return True
                 else:
                     return False
@@ -679,7 +682,7 @@ class Orders:
 
                 if eod_value < stop_value:
                     if close_if_hit:
-                        self.fully_close_row(trade_number)
+                        self._fully_close_row(trade_number)
                     return True
                 else:
                     return False
@@ -1172,11 +1175,12 @@ def initialise():
 
     columns = ['long_or_short', 'symbol', 'open_date', 'open_price', 'amount',
                'open_value', 'open_reason', 'close_date', 'close_price',
-               'close_value', 'close_reason', 'profit']
+               'close_value', 'close_reason', 'profit', 'profit%']
     data.trade_df = pd.DataFrame(columns=columns)
 
     data.number_of_trades = 0
     data.number_winning_trades = 0
+    data.profit_percent_array = np.array([])
 
 
 def update():
@@ -1205,6 +1209,7 @@ def update():
         all_closed_rows = data.trade_df[~data.trade_df['close_price'].isnull()]
         data.number_of_trades += len(all_closed_rows)
         data.number_winning_trades += len(all_closed_rows[all_closed_rows['profit'] > 0])
+        data.profit_percent_array = np.append(data.profit_percent_array, all_closed_rows['profit%'])
         data.trade_df.drop(all_closed_rows.index, inplace=True)
         data.trade_df.reset_index(drop=True, inplace=True)
         data.profit += all_closed_rows['profit'].sum()
@@ -1482,9 +1487,11 @@ def run(stock_data,
         data.number_winning_trades = len(data.trade_df[data.trade_df['profit'] > 0])
         percent_profitable = 100 * (data.number_winning_trades / data.number_of_trades)
         av_trade_profit = (data.wealth_track[-1] - data.starting_amount) / data.number_of_trades
+        av_trade_profit_perc = data.trade_df['profit%'].mean()
         summary_report_data = {'Number of Trades': data.number_of_trades,
                                'Percent Profitable': f'{round(percent_profitable,2)}%',
-                               'Average Trade Net Profit': av_trade_profit}
+                               'Average Trade Net Profit': av_trade_profit,
+                               'Average % per Trade': av_trade_profit_perc}
         summary_report = pd.DataFrame(data=summary_report_data, index=[0])
 
     if data.optimising:

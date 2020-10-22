@@ -285,7 +285,7 @@ def HistoricVolatility(prices, n=100):
     2019-12-31    7.317238    13.302135
     [2516 rows x 2 columns]
     """
-    return np.log(1 + prices.pct_change()).rolling(n).std() * sqrt(252) * 100
+    return np.log(1 + prices.pct_change()).rolling(n).std() * sqrt(252) * n
 
 
 def HighestHigh(prices, n=5):
@@ -711,3 +711,8 @@ def coef_of_variation(Closes, lookback=126):
     standard_deviations = Closes.rolling(lookback).std()
     means = Closes.rolling(lookback).mean()
     return standard_deviations / means
+
+
+def ConnorsRSI(rsi_length, up_down_length, roc_length):
+    
+    return 

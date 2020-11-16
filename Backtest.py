@@ -1068,6 +1068,7 @@ def get_valid_dates(max_lookback=200,
                     rebalance='daily',
                     start_trading=None,
                     end_trading=None,
+                    offset=0,
                     use_data=True):
     """
     Generates a date list containing the dates you wish to trade on. Considers
@@ -1119,6 +1120,7 @@ def get_valid_dates(max_lookback=200,
     if rebalance != 'daily':
         dates_df = pd.DataFrame()
         dates_df['Date'] = all_valid_dates
+        dates_df['Date'] = dates_df['Date'].shift(-offset)
         dates_df['Year'] = all_valid_dates.year
 
         if 'month' in rebalance:
@@ -1335,6 +1337,7 @@ def run(stock_data,
         start_when_all_in=False,
         ffill_prices=True,
         rebalance='daily',
+        offset=0,
         max_lookback=200,
         starting_cash=100000,
         data_source='Norgate',
@@ -1448,7 +1451,8 @@ def run(stock_data,
     trading_dates = get_valid_dates(max_lookback=max_lookback,
                                     rebalance=rebalance,
                                     start_trading=start_date,
-                                    end_trading=end_date)
+                                    end_trading=end_date,
+                                    offset=offset)
     Optimise.create_variable_combinations_dict(opt_params, optimise_type)
     number_of_rows = len(data.combination_df)
     print('Total number of tests:', number_of_rows)

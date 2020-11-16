@@ -10,6 +10,7 @@ import itertools
 import data
 from plotly.offline import plot
 import plotly.graph_objects as go
+import numpy as np
 
 
 def create_variable_combinations(list_of_series):
@@ -108,6 +109,14 @@ def record_backtest(combination_row):
         data.length_of_backtest = len(data.wealth_track) / 252
     profit_as_percent = 100 * (total_profit / data.starting_amount)
     realised_rate = profit_as_percent / data.length_of_backtest
+    equity = wealth_track_df - data.starting_amount
+    drawdown = equity - equity.cummax()
+    max_dd = drawdown.min()
+    max_dd_percent = 100 * max_dd / data.starting_amount
+    max_dd_date = drawdown.idxmin()
+    max_dd_start = drawdown.where(drawdown==0, np.nan).loc[:max_dd_date].last_valid_index()
+    max_dd_end = drawdown.where(drawdown==0, np.nan).loc[max_dd_date:].first_valid_index()
+    max_dd_length = len(drawdown[max_dd_start:max_dd_end])
 
     data.optimisation_report.loc[combination_row] = data.combination_df.iloc[combination_row]
     data.optimisation_report.at[combination_row, 'total_profit'] = total_profit
@@ -122,6 +131,9 @@ def record_backtest(combination_row):
         data.optimisation_report.at[combination_row, 'percent profitable trades'] = 0
         data.optimisation_report.at[combination_row, 'average_trade_net_profit'] = 0
         data.optimisation_report.at[combination_row, 'average_trade_%_profit'] = 0
+    data.optimisation_report.at[combination_row, 'max_drawdown'] = max_dd
+    data.optimisation_report.at[combination_row, 'max_drawdown%'] = max_dd_percent
+    data.optimisation_report.at[combination_row, 'length_of_max_drawdown'] = max_dd_length
 
     yearly_profits = wealth_track_df.resample('Y').last().diff()
     yearly_profits.index = yearly_profits.index.year

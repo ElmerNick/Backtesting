@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 import os
 import Optimise
+from strategy_stat_functions import *
 
 
 class Orders:
@@ -1066,7 +1067,8 @@ def get_csv_data(folder_path,
 def get_valid_dates(max_lookback=200,
                     rebalance='daily',
                     start_trading=None,
-                    end_trading=None):
+                    end_trading=None,
+                    use_data=True):
     """
     Generates a date list containing the dates you wish to trade on. Considers
     the NYSE trading calendar.
@@ -1095,45 +1097,73 @@ def get_valid_dates(max_lookback=200,
         rebalance frequency.
 
     """
-    all_dates = data.all_dates[max_lookback:]
+    if use_data:
+        all_dates = data.all_dates[max_lookback:]
 
-    if start_trading is not None:
+        if start_trading is not None:
+            start = start_trading
+        else:
+            start = all_dates[0]
+        if end_trading is not None:
+            end = end_trading
+        else:
+            end = all_dates[-1]
+    else:
         start = start_trading
-    else:
-        start = all_dates[0]
-    if end_trading is not None:
         end = end_trading
-    else:
-        end = all_dates[-1]
 
     nyse = mcal.get_calendar('NYSE')
     all_valid_dates = nyse.valid_days(start_date=start, end_date=end)
+    rebalance = rebalance.lower()
 
-    if rebalance == 'month-end':
-        date_list = (all_dates + pd.offsets.BMonthEnd()).drop_duplicates()
-    elif rebalance == 'month-start':
-        date_list = (all_dates + pd.offsets.BMonthBegin()).drop_duplicates()
-    elif rebalance == 'weekly':
-        date_list = (all_dates + pd.offsets.Week(n=0, weekday=4)).drop_duplicates()
-    elif rebalance == 'daily':
-        date_list = all_dates
+    if rebalance != 'daily':
+        dates_df = pd.DataFrame()
+        dates_df['Date'] = all_valid_dates
+        dates_df['Year'] = all_valid_dates.year
+
+        if 'month' in rebalance:
+            dates_df['Month'] = all_valid_dates.month
+            grouped_dates = dates_df.groupby(['Year', 'Month'])
+        elif 'week' in rebalance:
+            dates_df['Week'] = all_valid_dates.isocalendar().week.values
+            grouped_dates = dates_df.groupby(['Year', 'Week'])
+        else:
+            raise ValueError('Rebalance frequency must contain {daily, weekly, monthly}')
+
+        if 'begin' in rebalance or 'start' in rebalance or 'first' in rebalance:
+            date_list = pd.DatetimeIndex(grouped_dates.first()['Date'].values)
+        else:
+            date_list = pd.DatetimeIndex(grouped_dates.last()['Date'].values)
+
     else:
-        raise ValueError('rebalance must be either "daily", "weekly", "month-end", or "month-start"')
+        date_list = all_valid_dates
 
-    new_date_list = []
-    for ind in range(len(date_list)):
-        new_date = date_list[ind]
-        if new_date < all_valid_dates[0].date():
-            continue
-        while new_date not in all_valid_dates:
-            new_date -= timedelta(days=1)
-        new_date_list.append(new_date)
 
-    if end_trading is not None:
-        final_index = data.all_dates.get_loc(new_date_list[-1])
+    # if rebalance == 'month-end':
+    #     date_list = (all_dates + pd.offsets.BMonthEnd()).drop_duplicates()
+    # elif rebalance == 'month-start':
+    #     date_list = (all_dates + pd.offsets.BMonthBegin()).drop_duplicates()
+    # elif rebalance == 'weekly':
+    #     date_list = (all_dates + pd.offsets.Week(n=0, weekday=4)).drop_duplicates()
+    # elif rebalance == 'daily':
+    #     date_list = all_dates
+    # else:
+    #     raise ValueError('rebalance must be either "daily", "weekly", "month-end", or "month-start"')
+
+    # new_date_list = []
+    # for ind in range(len(date_list)):
+    #     new_date = date_list[ind]
+    #     if new_date < all_valid_dates[0].date():
+    #         continue
+    #     while new_date not in all_valid_dates:
+    #         new_date -= timedelta(days=1)
+    #     new_date_list.append(new_date)
+
+    if end_trading is not None and use_data:
+        final_index = data.all_dates.get_loc(date_list[-1])
         data.all_dates = data.all_dates[:final_index]
 
-    return new_date_list
+    return date_list
 
 
 def initialise():
@@ -1483,15 +1513,28 @@ def run(stock_data,
                                                 index=True, index_label='Test_Number')
 
     if not data.optimising:
+        data.trade_df['close_date'] = pd.to_datetime(data.trade_df['close_date'])
+        data.trade_df['open_date'] = pd.to_datetime(data.trade_df['open_date'])
+        equity = [x - data.starting_amount for x in data.wealth_track]
+        equity = pd.Series(index=data.date_track, data=equity)
         data.number_of_trades = len(data.trade_df)
         data.number_winning_trades = len(data.trade_df[data.trade_df['profit'] > 0])
         percent_profitable = 100 * (data.number_winning_trades / data.number_of_trades)
-        av_trade_profit = (data.wealth_track[-1] - data.starting_amount) / data.number_of_trades
+        av_trade_profit = equity[-1] / data.number_of_trades
         av_trade_profit_perc = data.trade_df['profit%'].mean()
-        summary_report_data = {'Number of Trades': data.number_of_trades,
-                               'Percent Profitable': f'{round(percent_profitable,2)}%',
-                               'Average Trade Net Profit': av_trade_profit,
-                               'Average % per Trade': av_trade_profit_perc}
+        trades_per_year = data.trade_df['close_date'].dt.year.value_counts().sort_index()
+        total_profit_percent = 100 * (equity[-1]) / data.starting_amount
+        dd, dd_stats = drawdown_stats(equity, data.starting_amount)
+        month_returns = monthly_returns(equity, data.starting_amount, False)
+
+        summary_report_data = {'Total Profit': total_profit_percent,
+                               'Max Drawdown': dd_stats['Max Drawdown'],
+                               'Max Drawdown %': dd_stats['Max Drawdown %'],
+                               'Length of Max Drawdown': dd_stats['Length of Max Drawdown'],
+                               'Total Number of Trades': data.number_of_trades,
+                               'Average Profit per Trade': av_trade_profit,
+                               'Average %Profit per trade': av_trade_profit_perc,
+                               'Percent Winning Trades': percent_profitable}
         summary_report = pd.DataFrame(data=summary_report_data, index=[0])
 
     if data.optimising:
@@ -1507,8 +1550,6 @@ def run(stock_data,
                          end_date=end_date,
                          title=plot_title)
         trade_list = data.trade_df
-        trade_list['close_date'] = pd.to_datetime(trade_list['close_date'])
-        trade_list['open_date'] = pd.to_datetime(trade_list['open_date'])
         trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
         positions_track = data.positions_tracker.fillna(method='ffill').dropna(how='all')
         value_track = positions_track.mul(data.daily_closes)
@@ -1517,7 +1558,13 @@ def run(stock_data,
             positions_track.columns = [norgatedata.symbol(x) for x in positions_track.columns]
             value_track.columns = [norgatedata.symbol(x) for x in value_track.columns]
         value_track.loc[:, 'Total'] = value_track.sum(axis=1)
-        return trade_list, positions_track, value_track, summary_report
+        results = {'Trade List': trade_list,
+                   'Positions Track': positions_track,
+                   'Value Track': value_track,
+                   'Summary': summary_report,
+                   'Yearly Trades': trades_per_year,
+                   'Monthly Returns': month_returns}
+        return results
 
 
 def _run_download_data_norgate(stock_data,

@@ -54,7 +54,7 @@ class Orders:
 
     """
 
-    def __init__(self, symbol, open_reason=None, close_reason=None,
+    def __init__(self, symbol, open_reason=None, close_reason=None, exec_timing=None,
                  compound=False, able_to_exceed=True, min_to_enter=10):
         """
         Initialising the placement of an order.
@@ -84,6 +84,7 @@ class Orders:
         self.limit_passed = False
         self.open_reason = open_reason
         self.close_reason = close_reason
+        self.exec_timing = exec_timing
         self.able_to_exceed = able_to_exceed
         self.price = data.current_price[symbol]
         self.min_to_enter = min_to_enter
@@ -164,7 +165,9 @@ class Orders:
             'open_value': value_of_order,
             'amount': amount,
             'open_reason': self.open_reason,
-            'close_reason': self.close_reason},
+            'close_reason': self.close_reason,
+            'entry_timing': self.exec_timing,
+            'exit_timing': None},
             ignore_index=True)  # Updating the trade dataframe for the new order
 
         data.positions_tracker.at[
@@ -378,13 +381,15 @@ class Orders:
             if amount_left == 0:
                 data.current_positions.remove(self.symbol)
             for index, row in self.all_open_trade_rows.iterrows():
-                if abs(amount_to_close) >= abs(row['amount']):
+                if amount_to_close == 0:
+                    break
+                elif abs(amount_to_close) >= abs(row['amount']):
                     self._fully_close_row(trade_number=index)
                     amount_to_close -= row['amount']
                 elif abs(amount_to_close) < abs(row['amount']):
                     self._part_close_row(trade_number=index, amount_to_close=amount_to_close)
-                elif amount_to_close == 0:
-                    break
+                # elif amount_to_close == 0:
+                #     break
             return True
         elif self.current_number_of_shares > 0 > target_amount or self.current_number_of_shares < 0 < target_amount:
             for index, row in self.all_open_trade_rows.iterrows():
@@ -543,6 +548,7 @@ class Orders:
         data.trade_df.at[trade_number, 'close_reason'] = self.close_reason
         data.trade_df.at[trade_number, 'profit'] = profit
         data.trade_df.at[trade_number, 'profit%'] = (profit / row_to_close['open_value']) * 100
+        data.trade_df.at[trade_number, 'exit_timing'] = self.exec_timing
 
         data.cash += profit + abs(row_to_close['open_value'])
         data.value_invested -= abs(row_to_close['open_value'])
@@ -573,6 +579,7 @@ class Orders:
         data.trade_df.at[trade_number, 'close_reason'] = self.close_reason
         data.trade_df.at[trade_number, 'profit'] = profit
         data.trade_df.at[trade_number, 'profit%'] = (profit / new_open_value) * 100
+        data.trade_df.at[trade_number, 'exit_timing'] = self.exec_timing
 
         data.cash += profit + abs(new_open_value)
         data.value_invested -= abs(new_open_value)
@@ -584,7 +591,8 @@ class Orders:
             'open_price': row_to_close['open_price'],
             'amount': amount_remaining,
             'open_value': row_to_close['open_price'] * amount_remaining,
-            'open_reason': row_to_close['open_reason']
+            'open_reason': row_to_close['open_reason'],
+            'entry_timing': row_to_close['entry_timing']
         },
             ignore_index=True)
 
@@ -1207,7 +1215,7 @@ def initialise():
 
     columns = ['long_or_short', 'symbol', 'open_date', 'open_price', 'amount',
                'open_value', 'open_reason', 'close_date', 'close_price',
-               'close_value', 'close_reason', 'profit', 'profit%']
+               'close_value', 'close_reason', 'profit', 'profit%', 'entry_timing', 'exit_timing']
     data.trade_df = pd.DataFrame(columns=columns)
 
     data.number_of_trades = 0
@@ -1506,7 +1514,7 @@ def run(stock_data,
                 progress += 100
                 pbar.set_postfix(inner_loop=int(progress/number_of_bars), refresh=True)
             for x in list(data.current_positions):
-                Orders(x, close_reason='End of Backtest').order_target_amount(0)
+                Orders(x, close_reason='End of Backtest', exec_timing='close').order_target_amount(0)
 
             after_backtest_finish(user, data)
 
@@ -1530,6 +1538,13 @@ def run(stock_data,
         total_profit_percent = 100 * (equity[-1]) / data.starting_amount
         dd, dd_stats = drawdown_stats(equity, data.starting_amount)
         month_returns = monthly_returns(equity, data.starting_amount, False)
+        # trade_list = data.trade_df
+        bus_dates = pd.bdate_range(data.trade_df['open_date'].min(), data.trade_df['close_date'].max())
+        holidays = bus_dates.drop(data.daily_closes.index, errors='ignore').astype('str')
+        # trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
+        data.trade_df['days_in_trade'] = np.busday_count(data.trade_df['open_date'].astype('str'),
+                                                      data.trade_df['close_date'].astype('str'),
+                                                      holidays=holidays)
 
         summary_report_data = {'Total Profit': total_profit_percent,
                                'Max Drawdown': dd_stats['Max Drawdown'],
@@ -1538,7 +1553,10 @@ def run(stock_data,
                                'Total Number of Trades': data.number_of_trades,
                                'Average Profit per Trade': av_trade_profit,
                                'Average %Profit per trade': av_trade_profit_perc,
-                               'Percent Winning Trades': percent_profitable}
+                               'Percent Winning Trades': percent_profitable,
+                               'Average Bars in Trade': data.trade_df['days_in_trade'].mean(),
+                               'Max Bars in Trade': data.trade_df['days_in_trade'].max(),
+                               'Min Bars in Trade': data.trade_df['days_in_trade'].min()}
         summary_report = pd.DataFrame(data=summary_report_data, index=[0])
 
     if data.optimising:
@@ -1554,7 +1572,12 @@ def run(stock_data,
                          end_date=end_date,
                          title=plot_title)
         trade_list = data.trade_df
-        trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
+        bus_dates = pd.bdate_range(trade_list['open_date'].min(), trade_list['close_date'].max())
+        holidays = bus_dates.drop(data.daily_closes.index, errors='ignore').astype('str')
+        # trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
+        trade_list['days_in_trade'] = np.busday_count(trade_list['open_date'].astype('str'),
+                                                      trade_list['close_date'].astype('str'),
+                                                      holidays=holidays)
         positions_track = data.positions_tracker.fillna(method='ffill').dropna(how='all')
         value_track = positions_track.mul(data.daily_closes)
         if data_source == 'Norgate':

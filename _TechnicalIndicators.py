@@ -106,6 +106,23 @@ def RSI(prices, n=14):
     RSI = 100 - (100 / (1 + RS))
     return RSI
 
+def reverse_RSI(prices, rsi_period=14, target_rsi=50):
+    auc, adc = historic_avg_changes(prices, rsi_period)
+    x = (rsi_period-1) * (adc*target_rsi / (100-target_rsi) - auc)
+    
+    if isinstance(x, pd.Series):
+        rev_rsi = prices.iloc[-1]
+        rev_rsi.where(x>=0, rev_rsi+x, inplace=True)
+        rev_rsi.where(x<0, rev_rsi + x * (100 - target_rsi) / target_rsi, inplace=True)
+    elif isinstance(x, float):
+        prev_close = prices.iloc[-1]
+        if x >= 0:
+            rev_rsi = prev_close + x
+        else:
+            rev_rsi = prev_close + x * (100 - target_rsi) / target_rsi
+    
+    return rev_rsi
+
 
 def SKEW(prices, n=10):
     """
@@ -285,7 +302,7 @@ def HistoricVolatility(prices, n=100):
     2019-12-31    7.317238    13.302135
     [2516 rows x 2 columns]
     """
-    return np.log(1 + prices.pct_change()).rolling(n).std() * sqrt(252) * n
+    return np.log(1 + prices.pct_change()).rolling(n).std() * sqrt(252) * 100
 
 
 def HighestHigh(prices, n=5):
@@ -711,8 +728,3 @@ def coef_of_variation(Closes, lookback=126):
     standard_deviations = Closes.rolling(lookback).std()
     means = Closes.rolling(lookback).mean()
     return standard_deviations / means
-
-
-def ConnorsRSI(rsi_length, up_down_length, roc_length):
-    
-    return 

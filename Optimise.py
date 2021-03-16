@@ -74,10 +74,10 @@ def create_variable_combinations_dict(param_dict, optimise_type):
         for i in range(len(list_of_tuples[0])):
             combo_list.append([tup[i] for tup in list_of_tuples])
 
-    combo_df = pd.DataFrame(index=range(len(combo_list)), columns=variable_names, dtype=object)
-    for i in range(len(combo_list)):
-        combo = combo_list[i]
-        combo_df.iloc[i] = combo
+    combo_df = pd.DataFrame(data=combo_list, columns=variable_names, dtype=object)
+    # for i in range(len(combo_list)):
+    #     combo = combo_list[i]
+    #     combo_df.iloc[i] = combo
 
     data.combination_df = combo_df
 

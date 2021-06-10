@@ -10,7 +10,7 @@ import data
 import user
 from datetime import date
 from math import floor, ceil
-import norgatedata
+# import norgatedata
 from plotly.offline import plot
 import plotly.graph_objects as go
 import pandas_market_calendars as mcal
@@ -874,6 +874,7 @@ def get_norgatedata(symbol_list,
     Examples
     --------
     """
+    import norgatedata
     all_dates = pd.date_range(start=start_date, end=end_date)
     if adjustment == 'TotalReturn':
         priceadjust = norgatedata.StockPriceAdjustmentType.TOTALRETURN
@@ -941,7 +942,7 @@ def get_norgatedata(symbol_list,
     pbar.close()
 
     nyse = mcal.get_calendar('NYSE')
-    all_valid_dates = nyse.valid_days(start_date, end_date)
+    all_valid_dates = nyse.valid_days(start_date, end_date).tz_localize(None)
 
     if need_close:
         daily_closes = daily_closes.reindex(all_valid_dates.date)
@@ -1122,7 +1123,7 @@ def get_valid_dates(max_lookback=200,
         end = end_trading
 
     nyse = mcal.get_calendar('NYSE')
-    all_valid_dates = nyse.valid_days(start_date=start, end_date=end)
+    all_valid_dates = nyse.valid_days(start_date=start, end_date=end).tz_localize(None)
     rebalance = rebalance.lower()
 
     if rebalance != 'daily':
@@ -1171,7 +1172,7 @@ def get_valid_dates(max_lookback=200,
 
     if end_trading is not None and use_data:
         final_index = data.all_dates.get_loc(date_list[-1])
-        data.all_dates = data.all_dates[:final_index]
+        data.all_dates = data.all_dates[:final_index+1]
 
     return date_list
 
@@ -1540,11 +1541,11 @@ def run(stock_data,
         month_returns = monthly_returns(equity, data.starting_amount, False)
         # trade_list = data.trade_df
         bus_dates = pd.bdate_range(data.trade_df['open_date'].min(), data.trade_df['close_date'].max())
-        holidays = bus_dates.drop(data.daily_closes.index, errors='ignore').astype('str')
+        holidays = bus_dates.drop(data.daily_closes.index, errors='ignore').values.astype('datetime64[D]')
         # trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
-        data.trade_df['days_in_trade'] = np.busday_count(data.trade_df['open_date'].astype('str'),
-                                                      data.trade_df['close_date'].astype('str'),
-                                                      holidays=holidays)
+        data.trade_df['days_in_trade'] = np.busday_count(data.trade_df['open_date'].values.astype('datetime64[D]'),
+                                                         data.trade_df['close_date'].values.astype('datetime64[D]'),
+                                                         holidays=holidays)
 
         summary_report_data = {'Total Profit': total_profit_percent,
                                'Max Drawdown': dd_stats['Max Drawdown'],
@@ -1572,15 +1573,16 @@ def run(stock_data,
                          end_date=end_date,
                          title=plot_title)
         trade_list = data.trade_df
-        bus_dates = pd.bdate_range(trade_list['open_date'].min(), trade_list['close_date'].max())
-        holidays = bus_dates.drop(data.daily_closes.index, errors='ignore').astype('str')
+        # bus_dates = pd.bdate_range(trade_list['open_date'].min(), trade_list['close_date'].max())
+        # holidays = bus_dates.drop(data.daily_closes.index, errors='ignore').astype('str')
         # trade_list['days_in_trade'] = trade_list['close_date'] - trade_list['open_date']
-        trade_list['days_in_trade'] = np.busday_count(trade_list['open_date'].astype('str'),
-                                                      trade_list['close_date'].astype('str'),
-                                                      holidays=holidays)
+        # trade_list['days_in_trade'] = np.busday_count(trade_list['open_date'].astype('str'),
+        #                                               trade_list['close_date'].astype('str'),
+        #                                               holidays=holidays)
         positions_track = data.positions_tracker.fillna(method='ffill').dropna(how='all')
         value_track = positions_track.mul(data.daily_closes)
         if data_source == 'Norgate':
+            import norgatedata
             trade_list['symbol'] = [norgatedata.symbol(asset_id) for asset_id in trade_list['symbol']]
             positions_track.columns = [norgatedata.symbol(x) for x in positions_track.columns]
             value_track.columns = [norgatedata.symbol(x) for x in value_track.columns]
@@ -1602,6 +1604,7 @@ def _run_download_data_norgate(stock_data,
                                data_adjustment,
                                start_when_all_in,
                                ffill_prices):
+    import norgatedata
     data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)
 
     symbols = set()
@@ -1650,21 +1653,28 @@ def _run_import_local_csv(stock_data,
                           max_lookback):
     data_start = start_date - pd.tseries.offsets.BDay(max_lookback + 10)
 
-    print('Before going further, ensure there are at least two files in the director you will provide\n\
-            daily_closes.csv and daily_opens.csv')
+    # print('Before going further, ensure there are at least two files in the director you will provide\n\
+    #         daily_closes.csv and daily_opens.csv')
 
-    folder_path = input('Paste the directory path to the daily data files: ')
-
-    all_files = {fname[:-4]: pd.read_csv(folder_path + '\\' + fname, index_col=0, parse_dates=True) for fname in
-                 os.listdir(folder_path)}
+    # folder_path = input('Paste the directory path to the daily data files: ')
+    if not isinstance(stock_data, str):
+        try:
+            stock_data = list(stock_data)[0]
+        except TypeError:
+            raise TypeError('stock_data must be either a string or an iterable of strings')
+    all_files = {fname[:-4]: pd.read_csv(stock_data + '\\' + fname, index_col=0, parse_dates=True) for fname in
+                 os.listdir(stock_data)}
+    nyse = mcal.get_calendar('NYSE')
+    trading_dates = nyse.valid_days(data_start, end_date).tz_localize(None)
 
     for fname, daily_data in all_files.items():
         daily_data = daily_data.loc[data_start:end_date]
+        daily_data = daily_data.reindex(trading_dates, method='ffill')
         daily_data.dropna(how='all')
         exec('data.{} = daily_data'.format(fname))
 
-    data.daily_closes.dropna(inplace=True)
-    data.daily_closes.dropna(inplace=True)
+    # data.daily_closes.dropna(inplace=True)
+    # data.daily_closes.dropna(inplace=True)
 
     data.all_dates = data.daily_closes.index
 

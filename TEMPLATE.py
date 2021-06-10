@@ -78,7 +78,7 @@ def after_backtest_finish(user, data):
 Input any equities or universes you wish to be included in the backtest. If a universe is chosen, the data for that will
 be stored in `data.daily_universes`.
 '''
-stock_data = {'Liquid_500', ('SPY',)}
+stock_data = {'S&P 500', ('SPY',)}
 
 save_location_of_report = r''  # If optimising this will be where the optimisation report is saved.
 '''
@@ -92,14 +92,17 @@ params_to_optimise = {}
 in_out_sampling = {'end_trim_percent': 10,
                    'random_month_percent': 25}
 
-data_fields_needed = ['Open', 'High', 'Low', 'Close']  # The fields needed. If `check_stop_loss` is used, need OHLC
-data_adjustment = 'TotalReturn'  # The type of adjustment of the data
 rebalance = 'daily'  # 'daily', 'weekly', 'month-end', 'month-start'
 max_lookback = 200
 starting_cash = 100000  # 2 dp. float
 data_source = 'Norgate'  # Either 'Norgate' or 'local_csv'
 start_date = date(2000, 1, 1)  # The date trading will start
 end_date = date(2020, 3, 31)  # The date trading will end
+
+
+### FOR NORGATE
+data_fields_needed = ['Open', 'High', 'Low', 'Close']  # The fields needed. If `check_stop_loss` is used, need OHLC
+data_adjustment = 'TotalReturn'  # The type of adjustment of the data
 
 Results = run(stock_data=stock_data,
               before_everything_starts=before_everything_starts,
@@ -119,7 +122,7 @@ Results = run(stock_data=stock_data,
               rebalance=rebalance,
               max_lookback=max_lookback,
               starting_cash=starting_cash,
-              data_source='Norgate',
+              data_source=data_source,
               start_date=start_date,
               end_date=end_date,
               auto_plot=True,
